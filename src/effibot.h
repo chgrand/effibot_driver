@@ -145,8 +145,8 @@ public:
 
   // Waypoint control
   int waypoints_ident;
-  int utm_origin_x;
-  int utm_origin_y;
+  double utm_origin_x;
+  double utm_origin_y;
   std::string utm_zone;
 
 }; 

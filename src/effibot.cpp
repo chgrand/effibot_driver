@@ -2,6 +2,7 @@
 //
 //
 //  TODO : dyanmic_reconfigure : GPS_active, Bumper_active
+//  TODO : namespace -->tf
 //
 
 #include <unistd.h>
@@ -19,7 +20,7 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   //emergency_stop = true;
   //waypoint_mode_activated = false;
 
-  // TODO origin as param
+  /*/ TODO origin as param
   utm_origin_x =  370385.000;   // Esperce
   utm_origin_y = 4797265.965;   // Esperce
 
@@ -32,8 +33,8 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   utm_origin_x -= 21635.1353902;  // hack onera place
   utm_origin_y -= 77732.4910679;  // hack onera place
 
-
   utm_zone = "31T";
+  */
 
   // get parameters from ROS or use default values
   nh_.param<std::string>("ip", ip_, "127.0.0.1");
@@ -41,6 +42,9 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
   nh_.param<int>("state/bumper", bumper_active_, 1);
   nh_.param<int>("state/GPS", gps_active_, 1);
+  nh_.param<double>("utm_origin_x", utm_origin_x, 370385.000);   // esperce
+  nh_.param<double>("utm_origin_y", utm_origin_x, 4797265.965);  // esperce
+  nh_.param<std::string>("utm_zone", utm_zone, "31T");
 
 
   // set parmeters to show default values
@@ -49,6 +53,9 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   nh_.setParam("basewidth", basewidth_);
   nh_.setParam("state/bumper", bumper_active_);
   nh_.setParam("state/GPS", gps_active_);
+  nh_.setParam("utm_origin_x", utm_origin_x);
+  nh_.setParam("utm_origin_y", utm_origin_y);
+  nh_.setParam("utm_zone", utm_zone);
 
   // Publisher (sensors data)
   mode_pub = nh_.advertise<std_msgs::String>("mode",1);
@@ -56,9 +63,10 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   state_pub = nh_.advertise<std_msgs::String>("state", 1);
   battery_pub = nh_.advertise<std_msgs::Float32>("robot_battery", 1);
   odometry_pub = nh_.advertise<nav_msgs::Odometry>("odom", 1);
-  motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray>("motors_current",1);
+  motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray>
+    ("motors_current",1);
   localization_pub = nh_.advertise<sensor_msgs::NavSatFix>("localization",1);
-  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1); // == localization (utm local)
+  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose_E",1); // == localization (utm local)
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
   //gps_pub = nh_.advertise<std_msgs::String>("gps_nema",10);
   gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nema",10);
