@@ -1,0 +1,16 @@
+<launch>
+  <include file='$(find effibot_driver)/launch/tf_base_link_to_laser.launch'/>
+  <node name="effibot2_pl" pkg="effibot_driver" 
+  	type="payload_monitor" 
+	ns='effibot2' />
+  <node name="effibot2" pkg="effibot_driver" type="velocity_node" 
+	output="screen">
+    <param name="ip" value="172.16.51.70" />
+    <param name="state/bumper" type="int" value="1" />
+  </node>
+
+  <node name='nmea_to_fix' pkg='nmea_navsat_driver' type ='nmea_topic_driver'>
+	<remap from='/fix' to='/effibot2/gps'/>
+	<remap from='/nmea_sentence' to='/effibot2/gps_nema'/>
+  </node>
+</launch>
