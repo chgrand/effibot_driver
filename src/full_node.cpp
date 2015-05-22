@@ -14,7 +14,11 @@ int main(int argc, char **argv)
   QCoreApplication app(argc, argv);
   ros::init(argc, argv, "effibot_driver");
 
-  Effibot effibot_driver(ros::NodeHandle("~"));//, Effibot::Velocity);
+  if(argc<2) {
+    std::cout << "Error sarting effibot driver" << std::endl
+	      << "  usage: " << argv[0] << " agent_name" << std::endl;
+
+  Effibot effibot_driver(ros::NodeHandle("~"), "effibot1");//, Effibot::Velocity);
   ros::spin();
 
   std::cout << "Bye bye...\n";
