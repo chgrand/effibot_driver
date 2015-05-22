@@ -10,16 +10,14 @@
 #include "effibot.h"
 
 //-----------------------------------------------------------------------------
-Effibot::Effibot(ros::NodeHandle node_handle) :
+Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   communication_(this),
   nh_(node_handle),
   connected_(false),
   node_state_(SECURITY_STOP),
-  waypoints_ident(0)
+  waypoints_ident(0),
+  robot_name(name)
 {
-  //emergency_stop = true;
-  //waypoint_mode_activated = false;
-
   /*/ TODO origin as param
   utm_origin_x =  370385.000;   // Esperce
   utm_origin_y = 4797265.965;   // Esperce
@@ -30,8 +28,8 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   utm_origin_x =  398369.61;  // caylus
   utm_origin_y = 4903128.01;  // caylus
 
-  utm_origin_x -= 21635.1353902;  // hack onera place
-  utm_origin_y -= 77732.4910679;  // hack onera place
+  utm_origin_x =  376734.39; // Onera
+  utm_origin_y = 4825393.60; // Onera
 
   utm_zone = "31T";
   */
@@ -63,8 +61,7 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
   state_pub = nh_.advertise<std_msgs::String>("state", 1);
   battery_pub = nh_.advertise<std_msgs::Float32>("robot_battery", 1);
   odometry_pub = nh_.advertise<nav_msgs::Odometry>("odom", 1);
-  motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray>
-    ("motors_current",1);
+  motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("motors_current",1);
   localization_pub = nh_.advertise<sensor_msgs::NavSatFix>("localization",1);
   pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose_E",1); // == localization (utm local)
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
@@ -83,8 +80,7 @@ Effibot::Effibot(ros::NodeHandle node_handle) :
 
   // Topic should receive data at 1Hz over the network to enable motion
   // could be used as emergency stop
-  comm_check_sub = nh_.subscribe("comm_check", 1, 
-				 &Effibot::commCheckCallback, this);  
+  comm_check_sub = nh_.subscribe("comm_check", 1, &Effibot::commCheckCallback, this);  
   last_comm_time = ros::Time::now();
 
   // main loop callback at 1Hz
@@ -98,23 +94,6 @@ Effibot::~Effibot()
 {
   if(connected_) 
     communication_.disconnectFromVehicle();
-}
-
-
-std::string Effibot::getNodeStateString(node_state_t node_state)
-{
-  switch(node_state) {
-  case SECURITY_STOP:
-    return "Security_stop";
-  case IDLE:
-    return "Idle";
-  case VELOCITY:
-    return("Velocity");
-  case WAYPOINT:
-    return("Waypoint");
-  default:
-    return "Unknown";
-  }
 }
 
 
@@ -197,25 +176,26 @@ void Effibot::commCheckCallback(const std_msgs::Int32 & msg)
   //ROS_INFO("Comm check received!");
 }
 
-Waypoint point;
-
-
 //-----------------------------------------------------------------------------
-void Effibot::waypointCallback(const geometry_msgs::Point::ConstPtr & msg)
+void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
 {
-  double utm_x = msg->x + utm_origin_x;
-  double utm_y = msg->y + utm_origin_y;
+  double x_goal = msg->position.x;
+  double y_goal = msg->position.y;
+  double utm_x = x_goal + utm_origin_x;
+  double utm_y = y_goal + utm_origin_y;
   double lat_;
   double lon_;
   gps_common::UTMtoLL(utm_y, utm_x, "31T", lat_, lon_);
 
-  ROS_INFO("Receive Goto(%.3f, %.3f)", msg->x, msg->y);
+  ROS_INFO("Receive Goto(%.3f, %.3f)", x_goal, y_goal);
   ROS_INFO("Goto (utm): %.3f, %.3f", utm_x, utm_y);
   ROS_INFO("Goto (gps): %.6f, %.6f", lon_, lat_);
 
     
   if (node_state_== IDLE) {
     WaypointList waypoints;
+    Waypoint point;
+
     waypoints.id = waypoints_ident++;
     
     point.longitude   = lon_;
@@ -278,7 +258,22 @@ void Effibot::onVehicleWaypointReached(int waypointIndex)
 }
 
 
-
+//-----------------------------------------------------------------------------
+std::string Effibot::getNodeStateString(node_state_t node_state)
+{
+  switch(node_state) {
+  case SECURITY_STOP:
+    return "Security_stop";
+  case IDLE:
+    return "Idle";
+  case VELOCITY:
+    return("Velocity");
+  case WAYPOINT:
+    return("Waypoint");
+  default:
+    return "Unknown";
+  }
+}
 
 //-----------------------------------------------------------------------------
 std::string Effibot::getModeString(const VehicleMode &mode)
@@ -409,7 +404,7 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
   //odom_trans.header.stamp = ros::Time(current_date);
   odom_trans.header.stamp = ros::Time::now();
   odom_trans.header.frame_id = "odom";
-  odom_trans.child_frame_id = "base_link";
+  odom_trans.child_frame_id = robot_name+"_base";
 
   odom_trans.transform.translation.x = pose_x;
   odom_trans.transform.translation.y = pose_y;
@@ -423,7 +418,7 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
   //dom_msg.header.stamp = ros::Time(current_date); 
   odom_msg.header.stamp = ros::Time::now();
   odom_msg.header.frame_id = "odom";
-  odom_msg.child_frame_id  = "base_link";
+  odom_msg.child_frame_id  = robot_name+"_base";
   
   odom_msg.pose.pose.position.x = pose_x;
   odom_msg.pose.pose.position.y = pose_y;
@@ -464,7 +459,7 @@ void Effibot::onVehicleLidarDataReceived(const LidarData & data)
 
   //laser_msg.header.stamp = ros::Time(data.date.perception);
   laser_msg.header.stamp = ros::Time::now();
-  laser_msg.header.frame_id = "laser";
+  laser_msg.header.frame_id = robot_name+"_laser";
 
   // from doc sensor Hokuyo UTM-30LX-EW
   // range = 270 deg
@@ -568,7 +563,7 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
     s.erase(s.length()-1);
   
   msg.header.stamp =  ros::Time::now();//(data.date.perception);
-  msg.header.frame_id = "gps";
+  msg.header.frame_id = robot_name+"_gps";
   msg.sentence = s;
   
   gps_pub.publish(msg);

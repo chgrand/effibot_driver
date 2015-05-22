@@ -114,8 +114,8 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(velocity_node 
-  src/velocity_node.cpp
+add_executable(full_node 
+  src/full_node.cpp
   src/effibot.cpp
 )
 

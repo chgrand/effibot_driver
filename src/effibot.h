@@ -23,7 +23,6 @@
 
 // Effibot
 #include <QCoreApplication>
-//#include <QByteArray>
 #include <dga-external-component-protocol/VehicleCommunicationListener.hpp>
 #include <dga-external-component-protocol/VehicleCommunication.hpp>
 #include <dga-external-component-protocol/Common/Types.hpp>
@@ -44,14 +43,10 @@ public:
   Effibot(ros::NodeHandle node_handle);
   ~Effibot();
   
-  //void tryToConnect(std::string ip, int port);
-  //bool isConnected();
-  
-
- private:
+private:
   // ROS callback
   void timerCallback(const ros::TimerEvent&); 
-  void waypointCallback(const geometry_msgs::Point::ConstPtr& msg);
+  void waypointCallback(const geometry_msgs::Pose::ConstPtr& msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
   void commCheckCallback(const std_msgs::Int32 & msg);
   
@@ -131,23 +126,23 @@ public:
   // Robot property (used for odometry computation)
   double basewidth_;     // lateral distance between wheels
  
+  // Relative pose of GPS
+  double utm_origin_x;
+  double utm_origin_y;
+  std::string utm_zone;
+
   // Odometry
   double odom_prev_date;
   double pose_x;
   double pose_y;
   double pose_theta;
 
-  //operating_mode_t operating_mode;
-  //bool emergency_stop;
-  //bool waypoint_mode_activated;
-  
+  // Node finite state machine
   node_state_t node_state_;
 
   // Waypoint control
   int waypoints_ident;
-  double utm_origin_x;
-  double utm_origin_y;
-  std::string utm_zone;
 
+  std::string robot_name;
 }; 
 #endif
