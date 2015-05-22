@@ -66,7 +66,7 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1); // == localization (utm local)
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
   //gps_pub = nh_.advertise<std_msgs::String>("gps_nema",10);
-  gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nema",10);
+  gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nmea",10);
   laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",10);
 
   // Subsribe to control input

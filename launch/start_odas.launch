@@ -16,8 +16,8 @@
     </node>
 
     <node name='nmea_to_fix' pkg='nmea_navsat_driver' type ='nmea_topic_driver'>
-      <remap from='/fix' to="/$(arg agent)/gps"/>
-      <remap from='/nmea_sentence' to="/$(arg agent)/gps_nema"/>
+      <remap from='fix' to="gps"/>
+      <remap from='nmea_sentence' to="gps_nmea"/>
     </node>
   </group>
 </launch>
