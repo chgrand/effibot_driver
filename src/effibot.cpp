@@ -41,13 +41,13 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   nh_.param<int>("state/bumper", bumper_active_, 1);
   nh_.param<int>("state/GPS", gps_active_, 1);
   nh_.param<double>("utm_origin_x", utm_origin_x, 370385.000);   // esperce
-  nh_.param<double>("utm_origin_y", utm_origin_x, 4797265.965);  // esperce
+  nh_.param<double>("utm_origin_y", utm_origin_y, 4797265.965);  // esperce
   nh_.param<std::string>("utm_zone", utm_zone, "31T");
 
 
   // set parmeters to show default values
-  nh_.setParam("ip", ip_);
-  nh_.setParam("port", port_);
+  //  nh_.setParam("ip", ip_);
+  // nh_.setParam("port", port_);
   nh_.setParam("basewidth", basewidth_);
   nh_.setParam("state/bumper", bumper_active_);
   nh_.setParam("state/GPS", gps_active_);
@@ -63,7 +63,7 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   odometry_pub = nh_.advertise<nav_msgs::Odometry>("odom", 1);
   motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("motors_current",1);
   localization_pub = nh_.advertise<sensor_msgs::NavSatFix>("localization",1);
-  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose_E",1); // == localization (utm local)
+  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1); // == localization (utm local)
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
   //gps_pub = nh_.advertise<std_msgs::String>("gps_nema",10);
   gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nema",10);
@@ -144,7 +144,7 @@ void Effibot::timerCallback(const ros::TimerEvent& e)
     switch(robot_state_) {
     case StateRunningWaypointsCommand:
       // TODO measure distance
-      float_msg.data = 100.0;
+      float_msg.data = 50.0;
       goto_feedback_pub.publish(float_msg);
       break;
 
@@ -152,7 +152,7 @@ void Effibot::timerCallback(const ros::TimerEvent& e)
       communication_.cancelCommand();
       string_msg.data="Error - Waypoint unreachable";
       goto_status_pub.publish(string_msg);
-      float_msg.data = 100.0;
+      float_msg.data = -1.0;
       goto_feedback_pub.publish(float_msg);
       node_state_ = IDLE;
       break;
@@ -176,9 +176,14 @@ void Effibot::commCheckCallback(const std_msgs::Int32 & msg)
   //ROS_INFO("Comm check received!");
 }
 
+
+
 //-----------------------------------------------------------------------------
 void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
 {
+  WaypointList waypoints;
+  Waypoint point;
+
   double x_goal = msg->position.x;
   double y_goal = msg->position.y;
   double utm_x = x_goal + utm_origin_x;
@@ -190,16 +195,17 @@ void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
   ROS_INFO("Receive Goto(%.3f, %.3f)", x_goal, y_goal);
   ROS_INFO("Goto (utm): %.3f, %.3f", utm_x, utm_y);
   ROS_INFO("Goto (gps): %.6f, %.6f", lon_, lat_);
-
+  ROS_INFO("Goto (delta) : %.3f, %.3f", (lon_-current_lon_)*1e5, (lat_-current_lat_)*1e5);
     
   if (node_state_== IDLE) {
-    WaypointList waypoints;
-    Waypoint point;
 
     waypoints.id = waypoints_ident++;
     
     point.longitude   = lon_;
     point.latitude    = lat_;
+
+    //point.longitude   = current_lon_;
+    //point.latitude    = current_lat_- 5e-5;
     point.linearSpeed = 0.5;  // TODO PARAM
     waypoints.append(point);
     
@@ -255,6 +261,12 @@ void Effibot::onVehicleWaypointsReceived(int waypointListId)
 void Effibot::onVehicleWaypointReached(int waypointIndex)
 {
   std::cout << "Point de passage " << waypointIndex << " atteint." << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+void Effibot::onVehicleCommandCancelled()
+{
+  std::cout << "Commande cancelled !" << std::endl;
 }
 
 
@@ -492,6 +504,9 @@ void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localiza
 
   double lon_ = localization.position.longitude;
   double lat_ = localization.position.latitude;
+  current_lon_ = lon_;
+  current_lat_ = lat_;
+  //ROS_INFO("Pose= (%.6f, %.6f)", lon_, lat_);
   
   localization_msg.header.stamp = ros::Time::now();//(localization.date.perception);
   localization_msg.header.frame_id = "odom";

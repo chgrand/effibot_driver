@@ -124,7 +124,7 @@ add_executable(full_node
 # add_dependencies(effi_driver_node effi_driver_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(velocity_node
+target_link_libraries(full_node
   ${catkin_LIBRARIES}
   Qt5::Core
   dga-external-component-protocol
@@ -162,7 +162,7 @@ install(PROGRAMS
 install(FILES
 #   # myfile1
 #   # myfile2
-   launch/velocity_mode.launch
+   #launch/velocity_mode.launch
    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
  )
 

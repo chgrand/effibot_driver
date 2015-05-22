@@ -40,7 +40,7 @@ public:
     IDLE 
   } node_state_t;
 
-  Effibot(ros::NodeHandle node_handle);
+  Effibot(ros::NodeHandle node_handle, std::string name);
   ~Effibot();
   
 private:
@@ -70,7 +70,7 @@ private:
   void onVehicleSendError(const SendError & error);
   void onVehicleWaypointsReceived(int waypointListId);
   void onVehicleWaypointReached(int waypointIndex);
-  void onVehicleCommandCancelled() {};
+  void onVehicleCommandCancelled();
 
 
   // utility function
@@ -130,6 +130,9 @@ private:
   double utm_origin_x;
   double utm_origin_y;
   std::string utm_zone;
+
+  double current_lon_;
+  double current_lat_;
 
   // Odometry
   double odom_prev_date;

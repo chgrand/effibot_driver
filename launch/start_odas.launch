@@ -1,19 +1,20 @@
 <launch>
 
-  <arg name="agent" default="effibot1">
+  <arg name="agent" default="effibot1"/>
   
-  <include file='$(find effibot_driver)/launch/tf_base_link_to_laser.launch'/>
-
   <group ns="$(arg agent)">
-    <node name="eff_payload" pkg="effibot_driver" type="payload_monitor" />
-    <node name="eff_driver" pkg="effibot_driver" type="full_node" 
-	  arg="$(arg agent)">
       <param name="ip" value="172.16.51.70" />
-      <param name="utm_x_origin" type="double" value= " 376734.39" />
-      <param name="utm_y_origin" type="double" value= "4825393.59" />
+      <param name="utm_origin_x" type="double" value= "376734.39" />
+      <param name="utm_origin_y" type="double" value= "4825392.59" />
       <param name="utm_zone" type="string" value="31T" />
       <param name="state/bumper" type="int" value="1" />
-    </node>
+
+   <node pkg="tf" type="static_transform_publisher" name="base_link_to_laser" args="0 0 0.200 0 0.35 0 $(arg agent)_base $(arg agent)_laser 10" />
+
+    <node name="eff_payload" pkg="effibot_driver" type="payload_monitor" />
+    <node name="eff_driver" pkg="effibot_driver" type="full_node" 
+	  args="$(arg agent)" output="screen">
+   </node>
   </group>
 
   <node name='nmea_to_fix' pkg='nmea_navsat_driver' type ='nmea_topic_driver'>
