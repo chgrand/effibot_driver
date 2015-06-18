@@ -1,0 +1,5 @@
+<launch>
+  <param name="utm_origin_x" type="double" value= "398369.61" />
+  <param name="utm_origin_y" type="double" value="4903128.01" />
+  <param name="utm_zone" type="string" value="31T" />
+</launch>

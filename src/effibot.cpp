@@ -18,31 +18,15 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   waypoints_ident(0),
   robot_name(name)
 {
-  /*/ TODO origin as param
-  utm_origin_x =  370385.000;   // Esperce
-  utm_origin_y = 4797265.965;   // Esperce
-
-  utm_origin_x =  398368.00; //398369.61;  // caylus
-  utm_origin_y = 4903240.00; //4903128.01;  // caylus
-
-  utm_origin_x =  398369.61;  // caylus
-  utm_origin_y = 4903128.01;  // caylus
-
-  utm_origin_x =  376734.39; // Onera
-  utm_origin_y = 4825393.60; // Onera
-
-  utm_zone = "31T";
-  */
-
   // get parameters from ROS or use default values
   nh_.param<std::string>("ip", ip_, "127.0.0.1");
   nh_.param<int>("port", port_, 14251);
   nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
   nh_.param<int>("state/bumper", bumper_active_, 1);
   nh_.param<int>("state/GPS", gps_active_, 1);
-  nh_.param<double>("utm_origin_x", utm_origin_x, 370385.000);   // esperce
-  nh_.param<double>("utm_origin_y", utm_origin_y, 4797265.965);  // esperce
-  nh_.param<std::string>("utm_zone", utm_zone, "31T");
+  nh_.param<double>("/utm_origin_x", utm_origin_x); //, 370385.000);   // esperce
+  nh_.param<double>("/utm_origin_y", utm_origin_y); //, 4797265.965);  // esperce
+  nh_.param<std::string>("/utm_zone", utm_zone); //, "31T");
 
 
   // set parmeters to show default values
@@ -51,9 +35,9 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   nh_.setParam("basewidth", basewidth_);
   nh_.setParam("state/bumper", bumper_active_);
   nh_.setParam("state/GPS", gps_active_);
-  nh_.setParam("utm_origin_x", utm_origin_x);
-  nh_.setParam("utm_origin_y", utm_origin_y);
-  nh_.setParam("utm_zone", utm_zone);
+  //nh_.setParam("utm_origin_x", utm_origin_x);
+  //nh_.setParam("utm_origin_y", utm_origin_y);
+  //nh_.setParam("utm_zone", utm_zone);
 
   // Publisher (sensors data)
   mode_pub = nh_.advertise<std_msgs::String>("mode",1);
@@ -65,7 +49,6 @@ Effibot::Effibot(ros::NodeHandle node_handle, std::string name) :
   localization_pub = nh_.advertise<sensor_msgs::NavSatFix>("localization",1);
   pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1); // == localization (utm local)
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
-  //gps_pub = nh_.advertise<std_msgs::String>("gps_nema",10);
   gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nmea",10);
   laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",10);
 
@@ -499,7 +482,6 @@ void Effibot::onVehicleLidarDataReceived(const LidarData & data)
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localization) 
 {
-  //pose_pub = nh_.advertise<geometry_msgs::Pose>("pose",1);
   sensor_msgs::NavSatFix localization_msg;
 
   double lon_ = localization.position.longitude;
