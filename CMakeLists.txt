@@ -119,6 +119,12 @@ add_executable(full_node
   src/effibot.cpp
 )
 
+
+add_executable(light_node
+  src/driver_node_light.cpp
+  src/driver_light.cpp
+)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(effi_driver_node effi_driver_generate_messages_cpp)
@@ -129,6 +135,13 @@ target_link_libraries(full_node
   Qt5::Core
   dga-external-component-protocol
 )
+
+target_link_libraries(light_node
+  ${catkin_LIBRARIES}
+  Qt5::Core
+  dga-external-component-protocol
+)
+
 
 #############
 ## Install ##
