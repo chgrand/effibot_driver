@@ -123,6 +123,7 @@ include_directories(
 add_executable(light_node
   src/driver_node_light.cpp
   src/driver_light.cpp
+  src/gps_nmea_driver.cpp
 )
 
 ## Add cmake target dependencies of the executable/library

@@ -5,6 +5,7 @@
 // ROS
 #include <ros/ros.h>
 #include <std_msgs/Int32.h>
+#include <std_msgs/Int32MultiArray.h>
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/String.h>
@@ -15,10 +16,11 @@
 #include <sensor_msgs/NavSatFix.h>
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PoseStamped.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <nav_msgs/Odometry.h>
-//#include <nmea_msgs/Sentence.h>
 #include <tf/transform_broadcaster.h>
 
+#include "gps_nmea_driver.h"
 #include "conversions.h"
 
 // Effibot
@@ -129,6 +131,10 @@ private:
   double utm_origin_x;
   double utm_origin_y;
   std::string utm_zone;
+
+  // Gps driver
+
+  GpsNmeaDriver gps_driver;
 
   //double current_lon_;
   //double current_lat_;

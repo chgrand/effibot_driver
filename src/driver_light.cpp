@@ -49,7 +49,7 @@ Effibot::Effibot(string name, string ip, int port) :
   pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("effibox/utm_pose",1);
   imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",1);
   laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",1);
-  gps_pub = nh_.advertise<geometry_msgs::PoseStampedWithCovariance>("gps/utm_pose",1);
+  gps_pub = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("gps/utm_pose",1);
   gps_info_pub = nh_.advertise<std_msgs::Int32MultiArray>("gps/info", 1);
   gps_hdop_pub = nh_.advertise<std_msgs::Float32>("gps/hdop", 1);
 
@@ -493,19 +493,19 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
 
   QString nmea_qstring(data.nmeaSentence);
   std::string s = nmea_qstring.toStdString();
+  gps_driver.scan(s);
+  gps_driver.print();
   
-  gps_info_t gps_data;
-  clear_gps_data(gps_data);
-  read_nmea_string(gps_data);
-
-  
-
   std_msgs::Int32MultiArray array;
   array.data.clear();
-  array.data.push_back();
+  array.data.push_back(gps_driver.getFixType());
+  array.data.push_back(gps_driver.getNumSatTracked());
+  array.data.push_back(gps_driver.getNumSatViewed());
   gps_info_pub.publish(array);
 
-
+  std_msgs::Float32 msg;
+  msg.data = gps_driver.getHDOP();
+  gps_hdop_pub.publish(msg);
 }
 
 
