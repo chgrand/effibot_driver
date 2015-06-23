@@ -493,7 +493,8 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
 
   QString nmea_qstring(data.nmeaSentence);
   std::string s = nmea_qstring.toStdString();
-  gps_driver.scan(s);
+  std::cout << s << std::endl;
+  std:: cout << "Decode = " << gps_driver.scan(s) << std::endl;
   gps_driver.print();
   
   std_msgs::Int32MultiArray array;

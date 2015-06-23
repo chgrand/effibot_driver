@@ -115,11 +115,11 @@ bool GpsNmeaDriver::scan(string nmea)
     // Analyse token of a given message type
     if( tokens[0]=="GPGGA") {
       //time = 0; // TODO convertion
-      latitude = atof(tokens[2].c_str())*(tokens[3]=="N"?+1:-1);
-      longitude = atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
+      latitude = (float)atof(tokens[2].c_str())*(tokens[3]=="N"?+1:-1);
+      longitude = (float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
       fix_type = atoi(tokens[6].c_str());
       num_sat_tracked = atoi(tokens[7].c_str());
-      HDOP =  atof(tokens[8].c_str());
+      HDOP =  (float)atof(tokens[8].c_str());
       altitude = atof(tokens[9].c_str());      
       return true;
     }
