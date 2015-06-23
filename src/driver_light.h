@@ -1,6 +1,6 @@
 // -*-c++-*-
-#ifndef EFFIBOT_H
-#define EFFIBOT_H
+#ifndef DRIVER_LIGHT_H
+#define DRIVER_LIGHT_H
 
 // ROS
 #include <ros/ros.h>
@@ -16,7 +16,7 @@
 #include <sensor_msgs/LaserScan.h>
 #include <geometry_msgs/PoseStamped.h>
 #include <nav_msgs/Odometry.h>
-#include <nmea_msgs/Sentence.h>
+//#include <nmea_msgs/Sentence.h>
 #include <tf/transform_broadcaster.h>
 
 #include "conversions.h"
@@ -96,8 +96,11 @@ private:
   //ros::Publisher  localization_pub;
   ros::Publisher  pose_pub;
   ros::Publisher  imu_pub;
-  ros::Publisher  gps_pub;
   ros::Publisher  laser_pub;
+  ros::Publisher  gps_pub;
+  ros::Publisher  gps_info_pub;
+  ros::Publisher  gps_hdop_pub;
+
   //tf::TransformBroadcaster odom_broadcaster;
   ros::Timer loop_timer_;
 

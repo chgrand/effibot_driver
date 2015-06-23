@@ -9,6 +9,8 @@
 
 #include "driver_light.h"
 
+using namespace std;
+
 int main(int argc, char **argv)
 {
   QCoreApplication app(argc, argv);
@@ -24,7 +26,8 @@ int main(int argc, char **argv)
   string ip = argv[2];
   int port = atoi(argv[3]);
 
-  ROS_LOG("Start effibot driver for robot %s on %s:%i", name, ip, port) 
+  ROS_INFO("Start effibot driver for robot %s on %s:%i", 
+	   name.c_str(), ip.c_str(), port); 
   Effibot effibot_driver(name, ip, port);
   ros::spin();
 

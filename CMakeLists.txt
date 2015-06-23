@@ -114,10 +114,10 @@ include_directories(
 # )
 
 ## Declare a cpp executable
-add_executable(full_node 
-  src/full_node.cpp
-  src/effibot.cpp
-)
+#add_executable(full_node 
+#  src/full_node.cpp
+#  src/effibot.cpp
+#)
 
 
 add_executable(light_node
@@ -130,11 +130,12 @@ add_executable(light_node
 # add_dependencies(effi_driver_node effi_driver_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(full_node
-  ${catkin_LIBRARIES}
-  Qt5::Core
-  dga-external-component-protocol
-)
+
+#target_link_libraries(full_node
+# ${catkin_LIBRARIES}
+#  Qt5::Core
+#  dga-external-component-protocol
+#)
 
 target_link_libraries(light_node
   ${catkin_LIBRARIES}

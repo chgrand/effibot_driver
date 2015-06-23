@@ -7,9 +7,9 @@
 
 #include <unistd.h>
 #include <iostream>
-#include "effibot.h"
+#include "driver_light.h"
 
-using namespace std::string;
+using namespace std;
 
 //-----------------------------------------------------------------------------
 Effibot::Effibot(string name, string ip, int port) :
@@ -29,14 +29,12 @@ Effibot::Effibot(string name, string ip, int port) :
   nh_.param<int>("state/GPS", gps_active_, 1);
   
   // Global parameters
-  nh_.param<double>("/utm_origin_x", utm_origin_x); //, 370385.000);   // esperce
-  nh_.param<double>("/utm_origin_y", utm_origin_y); //, 4797265.965);  // esperce
-  nh_.param<std::string>("/utm_zone", utm_zone); //, "31T");
+  nh_.param<double>("/utm_origin_x", utm_origin_x, 0); //, 370385.000);   // esperce
+  nh_.param<double>("/utm_origin_y", utm_origin_y, 0); //, 4797265.965);  // esperce
+  nh_.param<std::string>("/utm_zone", utm_zone, ""); //, "31T");
 
 
   // set parmeters to show default values
-  //  nh_.setParam("ip", ip_);
-  // nh_.setParam("port", port_);
   nh_.setParam("basewidth", basewidth_);
   nh_.setParam("state/bumper", bumper_active_);
   nh_.setParam("state/GPS", gps_active_);
@@ -46,23 +44,19 @@ Effibot::Effibot(string name, string ip, int port) :
   node_state_pub = nh_.advertise<std_msgs::String>("node_state", 1);
   state_pub = nh_.advertise<std_msgs::String>("state", 1);
   battery_pub = nh_.advertise<std_msgs::Float32>("robot_battery", 1);
-  odometry_pub = nh_.advertise<nav_msgs::Odometry>("odom", 1);
+  odometry_pub = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
   motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("motors_current",1);
-  localization_pub = nh_.advertise<sensor_msgs::NavSatFix>("localization",1);
-  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1); // == localization (utm local)
-  imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",10);
-  gps_pub = nh_.advertise<nmea_msgs::Sentence>("gps_nmea",10);
-  laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",10);
+  pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("effibox/utm_pose",1);
+  imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",1);
+  laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",1);
+  gps_pub = nh_.advertise<geometry_msgs::PoseStampedWithCovariance>("gps/utm_pose",1);
+  gps_info_pub = nh_.advertise<std_msgs::Int32MultiArray>("gps/info", 1);
+  gps_hdop_pub = nh_.advertise<std_msgs::Float32>("gps/hdop", 1);
+
 
   // Subsribe to control input
   cmd_vel_sub = nh_.subscribe("cmd_vel", 1, &Effibot::velocityCallback, this);
   
-  // Waypoint function
-  //goto_goal_sub = nh_.subscribe("goto/goal", 1, &Effibot::waypointCallback, this);
-  //goto_feedback_pub = nh_.advertise<std_msgs::Float32>("goto/feedback", 1);
-  //goto_status_pub = nh_.advertise<std_msgs::String>("goto/status", 1);
-  
-
   // Topic should receive data at 1Hz over the network to enable motion
   // could be used as emergency stop
   comm_check_sub = nh_.subscribe("comm_check", 1, &Effibot::commCheckCallback, this);  
@@ -118,7 +112,7 @@ void Effibot::timerCallback(const ros::TimerEvent& e)
 
   case VELOCITY:
     break;
-    
+  }    
 }
 
 
@@ -322,7 +316,6 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
   // publish the odometry message over ROS
   // -------------------------------------
   nav_msgs::Odometry odom_msg;
-  //dom_msg.header.stamp = ros::Time(current_date); 
   odom_msg.header.stamp = ros::Time::now();
   odom_msg.header.frame_id = "odom";
   odom_msg.child_frame_id  = robot_name+"_base";
@@ -382,8 +375,7 @@ void Effibot::onVehicleMotorCurrentsReceived(const VehicleMotorCurrents & curren
 void Effibot::onVehicleLidarDataReceived(const LidarData & data) 
 {
   sensor_msgs::LaserScan laser_msg;
-
-  //laser_msg.header.stamp = ros::Time(data.date.perception);
+  
   laser_msg.header.stamp = ros::Time::now();
   laser_msg.header.frame_id = robot_name+"_laser";
 
@@ -417,8 +409,8 @@ void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localiza
 
   double lon_ = localization.position.longitude;
   double lat_ = localization.position.latitude;
-  current_lon_ = lon_;
-  current_lat_ = lat_;
+  //current_lon_ = lon_;
+  //current_lat_ = lat_;
   //ROS_INFO("Pose= (%.6f, %.6f)", lon_, lat_);
   
   /*
@@ -482,6 +474,7 @@ void Effibot::onVehicleImuDataReceived(const ImuData & data)
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleGpsDataReceived(const GpsData & data)
 {
+  /*
   //std_msgs::String msg;
   nmea_msgs::Sentence msg;
   QString nmea_qstring(data.nmeaSentence);
@@ -496,6 +489,23 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
   msg.sentence = s;
   
   gps_pub.publish(msg);
+  */
+
+  QString nmea_qstring(data.nmeaSentence);
+  std::string s = nmea_qstring.toStdString();
+  
+  gps_info_t gps_data;
+  clear_gps_data(gps_data);
+  read_nmea_string(gps_data);
+
+  
+
+  std_msgs::Int32MultiArray array;
+  array.data.clear();
+  array.data.push_back();
+  gps_info_pub.publish(array);
+
+
 }
 
 
