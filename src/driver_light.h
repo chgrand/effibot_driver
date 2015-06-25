@@ -43,14 +43,16 @@ public:
 
   Effibot(std::string name, std::string ip, int port);
   ~Effibot();
+  void start_loop();
   
 private:
   // ROS callback
-  void timerCallback(const ros::TimerEvent&); 
-  void waypointCallback(const geometry_msgs::Pose::ConstPtr& msg);
+  //void timerCallback(const ros::TimerEvent&); 
+  //void waypointCallback(const geometry_msgs::Pose::ConstPtr& msg);
   void velocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
   void commCheckCallback(const std_msgs::Int32 & msg);
-  
+  void node_loop();
+
   // Effibot callback (from Qt Thread)
   void onVehicleConnected();
   void onVehicleDisconnected();
@@ -104,7 +106,7 @@ private:
   ros::Publisher  gps_hdop_pub;
 
   //tf::TransformBroadcaster odom_broadcaster;
-  ros::Timer loop_timer_;
+  //ros::Timer loop_timer_;
 
   // communication test (should receive Int32 on topic comm_check)
   ros::Time last_comm_time;

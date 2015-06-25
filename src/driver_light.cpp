@@ -22,16 +22,14 @@ Effibot::Effibot(string name, string ip, int port) :
   port_(port)
 {
   // get parameters from ROS or use default values
-  //nh_.param<std::string>("ip", ip_, "127.0.0.1"); // --> as node parameters
-  //nh_.param<int>("port", port_, 14251); // idem
   nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
   nh_.param<int>("state/bumper", bumper_active_, 1);
   nh_.param<int>("state/GPS", gps_active_, 1);
   
   // Global parameters
-  nh_.param<double>("/utm_origin_x", utm_origin_x, 0); //, 370385.000);   // esperce
-  nh_.param<double>("/utm_origin_y", utm_origin_y, 0); //, 4797265.965);  // esperce
-  nh_.param<std::string>("/utm_zone", utm_zone, ""); //, "31T");
+  nh_.param<double>("/utm_origin_x", utm_origin_x, 0);
+  nh_.param<double>("/utm_origin_y", utm_origin_y, 0);
+  nh_.param<std::string>("/utm_zone", utm_zone, "");
 
 
   // set parmeters to show default values
@@ -63,7 +61,7 @@ Effibot::Effibot(string name, string ip, int port) :
   last_comm_time = ros::Time::now();
 
   // main loop callback at 1Hz
-  loop_timer_ = nh_.createTimer(ros::Duration(1.0), &Effibot::timerCallback, this);
+  //loop_timer_ = nh_.createTimer(ros::Duration(1.0), &Effibot::timerCallback, this);
 }
 
 
@@ -74,7 +72,7 @@ Effibot::~Effibot()
     communication_.disconnectFromVehicle();
 }
 
-
+/*
 //-----------------------------------------------------------------------------
 void Effibot::timerCallback(const ros::TimerEvent& e)
 // FSM main loop
@@ -114,6 +112,64 @@ void Effibot::timerCallback(const ros::TimerEvent& e)
     break;
   }    
 }
+*/
+
+
+
+//-----------------------------------------------------------------------------
+void Effibot::start_loop()
+{
+  // Main loop updated at 1Hz
+  ros::Rate loop_rate(1);
+  
+  while(ros::ok()) { 
+    node_loop();
+    ros::spinOnce();
+    loop_rate.sleep();
+  }
+}
+
+//-----------------------------------------------------------------------------
+void Effibot::node_loop()
+{
+// FSM main loop
+  
+  std_msgs::String string_msg;
+  std_msgs::Float32 float_msg;  
+  
+  if(!connected_) {
+    ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
+    communication_.connectToVehicle(QString::fromStdString(ip_), port_);
+    return;
+  }
+  
+  // publish node_state
+  string_msg.data = getNodeStateString(node_state_);
+  node_state_pub.publish(string_msg); 
+
+  // network watchdog check
+  ros::Duration delta_time = ros::Time::now() - last_comm_time;
+  double comm_delta_time = delta_time.toSec();
+  if(comm_delta_time>2.0) {
+    //communication_.cancelCommand();
+    communication_.sendSpeedCommand(VehicleCommand(0,0));  
+    node_state_ = SECURITY_STOP;
+    return;
+  }
+  else {
+    if(node_state_ == SECURITY_STOP)
+      node_state_ = IDLE;
+  }
+  
+  switch(node_state_) {
+  case IDLE:
+    break;
+
+  case VELOCITY:
+    break;
+  }    
+}
+
 
 
 //-----------------------------------------------------------------------------
@@ -474,22 +530,7 @@ void Effibot::onVehicleImuDataReceived(const ImuData & data)
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleGpsDataReceived(const GpsData & data)
 {
-  /*
-  //std_msgs::String msg;
-  nmea_msgs::Sentence msg;
-  QString nmea_qstring(data.nmeaSentence);
-  std::string s = nmea_qstring.toStdString();
-  if (!s.empty() && s[s.length()-1] == '\n')
-    s.erase(s.length()-1);
-  if (!s.empty() && s[s.length()-1] == '\r')
-    s.erase(s.length()-1);
-  
-  msg.header.stamp =  ros::Time::now();//(data.date.perception);
-  msg.header.frame_id = robot_name+"_gps";
-  msg.sentence = s;
-  
-  gps_pub.publish(msg);
-  */
+  ros::Time date=ros::Time::now();
 
   QString nmea_qstring(data.nmeaSentence);
   std::string s = nmea_qstring.toStdString();
@@ -507,21 +548,32 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
   std_msgs::Float32 msg;
   msg.data = gps_driver.getHDOP();
   gps_hdop_pub.publish(msg);
+
+  // Converte GPS coordinate to UTM
+  double utm_x;
+  double utm_y;
+  std::string zone;
+  gps_common::LLtoUTM(gps_driver.getLatitude(), gps_driver.getLongitude(), utm_y, utm_x, zone);
+
+  geometry_msgs::PoseWithCovarianceStamped pose_msg;
+  pose_msg.header.stamp = date;
+  pose_msg.header.frame_id = "odom";
+  pose_msg.pose.pose.position.x = utm_x - utm_origin_x;
+  pose_msg.pose.pose.position.y = utm_y - utm_origin_y;
+  pose_msg.pose.pose.position.z = gps_driver.getAltitude();
+  
+  // Covariance computed from HDOP and nominal variance
+  const float nominal_variance = 2.5*2.5;
+  for(int i=0;i<36;i++) pose_msg.pose.covariance[i] = 0.0;
+  float variance = gps_driver.getHDOP()*nominal_variance/2.;
+  pose_msg.pose.covariance[0] = variance;
+  pose_msg.pose.covariance[7] = variance;
+
+  pose_pub.publish(pose_msg);
 }
 
 
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleObstacleMapReceived(const ObstacleMap & data)
 {
-  /*
-  std::cout << "Date: " << data.date.perception << " +/- " << data.date.uncertainty << std::endl;
-  for (int i = 0; i < data.obstacles.size(); ++i)
-    {
-      float x = data.obstacles[i].x;
-      float y = data.obstacles[i].y;
-      std::cout << "Obstacle " << i
-		<< " x: " << x << " m" <<
-		<< " y: " << y << " m" << std::endl;
-    }
-  */
 }
