@@ -34,7 +34,7 @@ void GpsNmeaDriver::print()
   cout << "longitude______: " << longitude << endl;
   cout << "latitude_______: " << latitude << endl;
   cout << "altitude_______: " << altitude << endl;
-  cout << "fix tyep_______: " << gps_fix_info[fix_type] << endl;
+  cout << "fix type_______: " << gps_fix_info[fix_type] << endl;
   cout << "Nb sat tracked_: " << num_sat_tracked << endl;
   cout << "Nb sat in view_: " << num_sat_viewed << endl;
   cout << "Horizontal DOP_: " << HDOP << endl;
@@ -81,6 +81,10 @@ inline int GpsNmeaDriver::checksum(string s)
 //-----------------------------------------------------------------------------
 bool GpsNmeaDriver::scan(string nmea)
 {
+  // Force position data to invalid
+  // --> take new pos into account only if GPGGA received
+ fix_type = 0;
+
   // Extract data and checksum
   int start = nmea.find('$')+1;
   int end = nmea.find('*');

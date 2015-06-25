@@ -549,27 +549,30 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
   msg.data = gps_driver.getHDOP();
   gps_hdop_pub.publish(msg);
 
-  // Converte GPS coordinate to UTM
-  double utm_x;
-  double utm_y;
-  std::string zone;
-  gps_common::LLtoUTM(gps_driver.getLatitude(), gps_driver.getLongitude(), utm_y, utm_x, zone);
 
-  geometry_msgs::PoseWithCovarianceStamped pose_msg;
-  pose_msg.header.stamp = date;
-  pose_msg.header.frame_id = "odom";
-  pose_msg.pose.pose.position.x = utm_x - utm_origin_x;
-  pose_msg.pose.pose.position.y = utm_y - utm_origin_y;
-  pose_msg.pose.pose.position.z = gps_driver.getAltitude();
+  if(gps_driver.getFixType() != 0) {
+    // Converte GPS coordinate to UTM
+    double utm_x;
+    double utm_y;
+    std::string zone;
+    gps_common::LLtoUTM(gps_driver.getLatitude(), gps_driver.getLongitude(), utm_y, utm_x, zone);
+
+    geometry_msgs::PoseWithCovarianceStamped pose_msg;
+    pose_msg.header.stamp = date;
+    pose_msg.header.frame_id = "odom";
+    pose_msg.pose.pose.position.x = utm_x - utm_origin_x;
+    pose_msg.pose.pose.position.y = utm_y - utm_origin_y;
+    pose_msg.pose.pose.position.z = gps_driver.getAltitude();
   
-  // Covariance computed from HDOP and nominal variance
-  const float nominal_variance = 2.5*2.5;
-  for(int i=0;i<36;i++) pose_msg.pose.covariance[i] = 0.0;
-  float variance = gps_driver.getHDOP()*nominal_variance/2.;
-  pose_msg.pose.covariance[0] = variance;
-  pose_msg.pose.covariance[7] = variance;
+    // Covariance computed from HDOP and nominal variance
+    const float nominal_variance = 2.5*2.5;
+    for(int i=0;i<36;i++) pose_msg.pose.covariance[i] = 0.0;
+    float variance = gps_driver.getHDOP()*nominal_variance/2.;
+    pose_msg.pose.covariance[0] = variance;
+    pose_msg.pose.covariance[7] = variance;
 
-  pose_pub.publish(pose_msg);
+    gps_pub.publish(pose_msg);
+  }
 }
 
 
