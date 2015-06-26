@@ -113,6 +113,11 @@ private:
   double comm_delta_time;
   bool comm_state_valid;
 
+  // Cmd_vel
+  float velocity_linear;
+  float velocity_angular;
+
+
   // Effibot socket communication parameters
   std::string ip_;
   int port_;

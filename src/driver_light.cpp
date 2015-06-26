@@ -14,7 +14,6 @@ using namespace std;
 //-----------------------------------------------------------------------------
 Effibot::Effibot(string name, string ip, int port) :
   communication_(this),
-  //nh_(node_handle),
   connected_(false),
   node_state_(SECURITY_STOP),
   robot_name(name),
@@ -60,8 +59,8 @@ Effibot::Effibot(string name, string ip, int port) :
   comm_check_sub = nh_.subscribe("comm_check", 1, &Effibot::commCheckCallback, this);  
   last_comm_time = ros::Time::now();
 
-  // main loop callback at 1Hz
-  //loop_timer_ = nh_.createTimer(ros::Duration(1.0), &Effibot::timerCallback, this);
+  velocity_linear = 0.0;
+  velocity_angular = 0.0;
 }
 
 
@@ -72,57 +71,23 @@ Effibot::~Effibot()
     communication_.disconnectFromVehicle();
 }
 
-/*
-//-----------------------------------------------------------------------------
-void Effibot::timerCallback(const ros::TimerEvent& e)
-// FSM main loop
-{
-  std_msgs::String string_msg;
-  std_msgs::Float32 float_msg;  
-  
-  if(!connected_) {
-    ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
-    communication_.connectToVehicle(QString::fromStdString(ip_), port_);
-    return;
-  }
-  
-  std_msgs::String node_state_msg;
-  node_state_msg.data = getNodeStateString(node_state_);
-  node_state_pub.publish(node_state_msg); 
-
-  // network watchdog check
-  ros::Duration delta_time = ros::Time::now() - last_comm_time;
-  double comm_delta_time = delta_time.toSec();
-  if(comm_delta_time>2.0) {
-    communication_.cancelCommand();
-    communication_.sendSpeedCommand(VehicleCommand(0,0));  
-    node_state_ = SECURITY_STOP;
-    return;
-  }
-  else {
-    if(node_state_ == SECURITY_STOP)
-      node_state_ = IDLE;
-  }
-  
-  switch(node_state_) {
-  case IDLE:
-    break;
-
-  case VELOCITY:
-    break;
-  }    
-}
-*/
-
-
 
 //-----------------------------------------------------------------------------
 void Effibot::start_loop()
 {
-  // Main loop updated at 1Hz
-  ros::Rate loop_rate(1);
+  while(!connected_) {
+    ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
+    communication_.connectToVehicle(QString::fromStdString(ip_), port_);
+    ros::Duration(1).sleep();
+  }
+
+  if(!connected_)
+    return;
+
+  // Main loop updated at 100Hz
+  ros::Rate loop_rate(100);
   
-  while(ros::ok()) { 
+  while(ros::ok()&&(connected_)) {
     node_loop();
     ros::spinOnce();
     loop_rate.sleep();
@@ -137,12 +102,6 @@ void Effibot::node_loop()
   std_msgs::String string_msg;
   std_msgs::Float32 float_msg;  
   
-  if(!connected_) {
-    ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
-    communication_.connectToVehicle(QString::fromStdString(ip_), port_);
-    return;
-  }
-  
   // publish node_state
   string_msg.data = getNodeStateString(node_state_);
   node_state_pub.publish(string_msg); 
@@ -150,8 +109,7 @@ void Effibot::node_loop()
   // network watchdog check
   ros::Duration delta_time = ros::Time::now() - last_comm_time;
   double comm_delta_time = delta_time.toSec();
-  if(comm_delta_time>2.0) {
-    //communication_.cancelCommand();
+  if(comm_delta_time>1.2) {
     communication_.sendSpeedCommand(VehicleCommand(0,0));  
     node_state_ = SECURITY_STOP;
     return;
@@ -168,6 +126,7 @@ void Effibot::node_loop()
   case VELOCITY:
     break;
   }    
+  communication_.sendSpeedCommand(VehicleCommand(velocity_linear, velocity_angular));  
 }
 
 
@@ -193,8 +152,10 @@ void Effibot::velocityCallback(const geometry_msgs::Twist::ConstPtr& msg)
   else if(w<-1.6) w=-1.6;
 
   if(node_state_ != SECURITY_STOP) {
+    velocity_linear = v;
+    velocity_angular = w;
+
     //ROS_INFO("cmd_vel = (%.3f, %.3f)", v, w);
-    communication_.sendSpeedCommand(VehicleCommand(v,w));  
     //if(node_state_ == VELOCITY) {
     if( (std::abs(v) < std::numeric_limits<double>::epsilon()) &&
         (std::abs(w) < std::numeric_limits<double>::epsilon()))
@@ -203,6 +164,8 @@ void Effibot::velocityCallback(const geometry_msgs::Twist::ConstPtr& msg)
       node_state_ = VELOCITY;
   }
 };
+
+
 
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleSendError(const SendError & error)

@@ -3,11 +3,27 @@
 #include <vector>
 #include <string> 
 #include <stdlib.h>
+#include <cmath>
+#include <iomanip>  
 #include "gps_nmea_driver.h"
 
 //#define __DEBUG__
 
 using namespace std;
+
+template<typename T>
+T StringToNumber(const std::string& numberAsString)
+{
+  T value;
+
+  std::stringstream stream(numberAsString);
+  stream >> value;
+  if (stream.fail()) {
+    return 999999;
+  }
+  return value;
+}
+
 
 string gps_fix_info[] = {
   "Invalid",
@@ -31,9 +47,11 @@ void GpsNmeaDriver::print()
 {
   cout << "========================" << endl;
   //cout << "time___________: " <<  time << endl;
+  cout << fixed << setprecision(8);
   cout << "longitude______: " << longitude << endl;
   cout << "latitude_______: " << latitude << endl;
-  cout << "altitude_______: " << altitude << endl;
+  cout << "altitude_______: " << setprecision(3) << altitude << endl;
+  cout << resetiosflags;
   cout << "fix type_______: " << gps_fix_info[fix_type] << endl;
   cout << "Nb sat tracked_: " << num_sat_tracked << endl;
   cout << "Nb sat in view_: " << num_sat_viewed << endl;
@@ -78,6 +96,27 @@ inline int GpsNmeaDriver::checksum(string s)
   return int(chksum)&0xFF;
 }
 
+double convert_latitude(string value, string way)
+{
+  if(value.length()<4)
+    return NAN;
+  double dd = (double)atof(value.substr(0,2).c_str());
+  double mm = (double)atof(value.substr(2).c_str());
+  //cout << "Lat.mm  = " << mm << endl;
+  return (dd+mm/60.)*(way=="N"?+1:-1);
+};
+    
+double convert_longitude(string value, string way)
+{
+  if(value.length()<5)
+    return NAN;
+  double dd = StringToNumber<double>(value.substr(0,3));
+  double mm = StringToNumber<double>(value.substr(3));
+  //cout << "mm= " << fixed << setprecision(10) << mm << endl; 
+  return (dd+mm/60.)*(way=="E"?+1:-1);
+};
+
+
 //-----------------------------------------------------------------------------
 bool GpsNmeaDriver::scan(string nmea)
 {
@@ -119,8 +158,9 @@ bool GpsNmeaDriver::scan(string nmea)
     // Analyse token of a given message type
     if( tokens[0]=="GPGGA") {
       //time = 0; // TODO convertion
-      latitude = (float)atof(tokens[2].c_str())*(tokens[3]=="N"?+1:-1);
-      longitude = (float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
+      latitude = convert_latitude(tokens[2],tokens[3]);
+      longitude = convert_longitude(tokens[4], tokens[5]); 
+	//(float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
       fix_type = atoi(tokens[6].c_str());
       num_sat_tracked = atoi(tokens[7].c_str());
       HDOP =  (float)atof(tokens[8].c_str());
@@ -130,8 +170,10 @@ bool GpsNmeaDriver::scan(string nmea)
 
     if( tokens[0]=="GPRMC") {
       //time = 0; //TODO convertion
-      latitude = atof(tokens[3].c_str())*(tokens[4]=="N"?+1:-1);
-      longitude = atof(tokens[5].c_str())*(tokens[6]=="E"?+1:-1);
+      //latitude = atof(tokens[3].c_str())*(tokens[4]=="N"?+1:-1);
+      //longitude = atof(tokens[5].c_str())*(tokens[6]=="E"?+1:-1);
+      latitude = convert_latitude(tokens[2],tokens[3]);
+      longitude = convert_longitude(tokens[4], tokens[5]); 
       velocity = atof(tokens[7].c_str()) / 1.943844;  // convert knot to m/s
       heading = atof(tokens[8].c_str())*3.1415926/180.;  // convert deg to rad
       //date = tokens[9]; //todo
