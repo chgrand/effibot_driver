@@ -27,14 +27,14 @@ public:
   bool scan(string nmea);
   void print();
 
-  float getLongitude() {return longitude;}
-  float getLatitude() {return latitude;}
-  float getAltitude() {return altitude;}
+  double getLongitude() {return longitude;}
+  double getLatitude() {return latitude;}
+  double getAltitude() {return altitude;}
   int getFixType() {return fix_type;}
   int getNumSatTracked() {return num_sat_tracked;}
   int getNumSatViewed() {return num_sat_viewed;}
-  float getHDOP() {return HDOP;}
-  //float getHeading();
+  double getHDOP() {return HDOP;}
+  //double getHeading();
   string getFixString();
 
 private:
@@ -42,17 +42,17 @@ private:
   int checksum(string s);
 
 protected:
-  float longitude;
-  float latitude;
-  float altitude;
+  double longitude;
+  double latitude;
+  double altitude;
   int   fix_type;
   int   num_sat_tracked;
   int   num_sat_viewed; 
-  float HDOP;
+  double HDOP;
 
-  float velocity;
-  float heading;
-  float deviation;
+  double velocity;
+  double heading;
+  double deviation;
 };
 
 #endif

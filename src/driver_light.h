@@ -109,6 +109,8 @@ private:
 
   //tf::TransformBroadcaster odom_broadcaster;
   //ros::Timer loop_timer_;
+  ros::Timer connect_loop_timer;
+  ros::Timer main_loop_timer;
 
   // communication test (should receive Int32 on topic comm_check)
   ros::Time last_comm_time;

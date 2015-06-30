@@ -104,8 +104,8 @@ void Effibot::main_loop(const ros::TimerEvent& e)
     ros::Duration delta_time = ros::Time::now() - last_comm_time;
     double comm_delta_time = delta_time.toSec();
     if(comm_delta_time>1.2) {
-      v = 0;
-      w = 0;
+      velocity_linear = 0.0;
+      velocity_angular = 0.0;
       communication_.sendSpeedCommand(VehicleCommand(0,0));  
       node_state_ = SECURITY_STOP;
       return;

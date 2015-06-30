@@ -101,8 +101,8 @@ double convert_latitude(string value, string way)
 {
   if(value.length()<4)
     return NAN;
-  double dd = (double)atof(value.substr(0,2).c_str());
-  double mm = (double)atof(value.substr(2).c_str());
+  double dd = StringToNumber<double>(value.substr(0,2));
+  double mm = StringToNumber<double>(value.substr(2));
   //cout << "Lat.mm  = " << mm << endl;
   return (dd+mm/60.)*(way=="N"?+1:-1);
 };
@@ -165,7 +165,8 @@ bool GpsNmeaDriver::scan(string nmea)
 	//(float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
       fix_type = atoi(tokens[6].c_str());
       num_sat_tracked = atoi(tokens[7].c_str());
-      HDOP =  (float)atof(tokens[8].c_str());
+      //HDOP =  (double)atof(tokens[8].c_str());
+      HDOP = StringToNumber<double>(tokens[8]);
       altitude = atof(tokens[9].c_str());      
       return true;
     }
