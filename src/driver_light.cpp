@@ -22,6 +22,8 @@ Effibot::Effibot(string name, string ip, int port) :
 {
   // get parameters from ROS or use default values
   nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
+  nh_.param<double>("gps/offset/x", gps_offset_x, 0.); // 0 mm (robot manual)
+  nh_.param<double>("gps/offset/y", gps_offset_y, -0.165); // 165 mm (robot manual)
   nh_.param<int>("state/bumper", bumper_active_, 1);
   nh_.param<int>("state/GPS", gps_active_, 1);
   
@@ -455,33 +457,36 @@ void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localiza
   geometry_msgs::PoseStamped pose_msg;
   pose_msg.header.stamp = ros::Time::now();
   pose_msg.header.frame_id = "odom";
-  pose_msg.pose.position.x = utm_x - utm_origin_x;
-  pose_msg.pose.position.y = utm_y - utm_origin_y;
+  pose_msg.pose.position.x = utm_x - utm_origin_x - gps_offset_x;
+  pose_msg.pose.position.y = utm_y - utm_origin_y - gps_offset_y;
   pose_pub.publish(pose_msg);
 }
 
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleImuDataReceived(const ImuData & data) 
 {
+  // Intergrate sensor transformation
   sensor_msgs::Imu imu_msg;
 
   imu_msg.header.stamp = ros::Time::now();//(data.date.perception);
-  imu_msg.header.frame_id = robot_name+"_imu";
+  imu_msg.header.frame_id = robot_name+"_base";
   
-  imu_msg.linear_acceleration.x = data.accelerationX;
-  imu_msg.linear_acceleration.y = data.accelerationY;
-  imu_msg.linear_acceleration.z = data.accelerationZ;
-  //imu_msg.linear_acceleration_covariance = double[9]; 
-
-  imu_msg.angular_velocity.x = data.angularSpeedX;
-  imu_msg.angular_velocity.y = data.angularSpeedY;
-  imu_msg.angular_velocity.z = data.angularSpeedZ;
+  imu_msg.angular_velocity.x = -data.angularSpeedX;
+  imu_msg.angular_velocity.z = -data.angularSpeedY;
+  imu_msg.angular_velocity.y = -data.angularSpeedZ;
   //imu_msg.angular_velocity_covariance = double[9]; 
+
+  imu_msg.linear_acceleration.x = data.accelerationX;
+  imu_msg.linear_acceleration.z = data.accelerationY;
+  imu_msg.linear_acceleration.y = data.accelerationZ;
+  //imu_msg.linear_acceleration_covariance = double[9]; 
 
   // [TODO] Orientation
   //   geometry_msgs/Quaternion orientation
   //   float64[9] orientation_covariance # Row major about x, y, z axes
 
+  // [TODO] add offset on acceleration
+  
   imu_pub.publish(imu_msg);
 }
 
@@ -518,8 +523,8 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
     geometry_msgs::PoseWithCovarianceStamped pose_msg;
     pose_msg.header.stamp = date;
     pose_msg.header.frame_id = "odom";
-    pose_msg.pose.pose.position.x = utm_x - utm_origin_x;
-    pose_msg.pose.pose.position.y = utm_y - utm_origin_y;
+    pose_msg.pose.pose.position.x = utm_x - utm_origin_x - gps_offset_x;
+    pose_msg.pose.pose.position.y = utm_y - utm_origin_y - gps_offset_y;
     pose_msg.pose.pose.position.z = gps_driver.getAltitude();
   
     // Covariance computed from HDOP and nominal variance

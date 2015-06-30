@@ -137,6 +137,9 @@ private:
   
   // Robot property (used for odometry computation)
   double basewidth_;     // lateral distance between wheels
+  double gps_offset_x;
+  double gps_offset_y;
+
  
   // Relative pose of GPS
   double utm_origin_x;
