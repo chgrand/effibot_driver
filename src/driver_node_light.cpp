@@ -29,8 +29,8 @@ int main(int argc, char **argv)
   ROS_INFO("Start effibot driver for robot %s on %s:%i", 
 	   name.c_str(), ip.c_str(), port); 
   Effibot effibot_driver(name, ip, port);
-  //ros::spin();
-  effibot_driver.start_loop();
+  ros::spin();
+  //effibot_driver.start_loop();
 
   std::cout << "Bye bye...\n";
   return 0;

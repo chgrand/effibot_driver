@@ -96,6 +96,7 @@ inline int GpsNmeaDriver::checksum(string s)
   return int(chksum)&0xFF;
 }
 
+//-----------------------------------------------------------------------------
 double convert_latitude(string value, string way)
 {
   if(value.length()<4)
@@ -106,6 +107,7 @@ double convert_latitude(string value, string way)
   return (dd+mm/60.)*(way=="N"?+1:-1);
 };
     
+//-----------------------------------------------------------------------------
 double convert_longitude(string value, string way)
 {
   if(value.length()<5)
@@ -172,8 +174,8 @@ bool GpsNmeaDriver::scan(string nmea)
       //time = 0; //TODO convertion
       //latitude = atof(tokens[3].c_str())*(tokens[4]=="N"?+1:-1);
       //longitude = atof(tokens[5].c_str())*(tokens[6]=="E"?+1:-1);
-      latitude = convert_latitude(tokens[2],tokens[3]);
-      longitude = convert_longitude(tokens[4], tokens[5]); 
+      latitude = convert_latitude(tokens[3],tokens[4]);
+      longitude = convert_longitude(tokens[5], tokens[6]); 
       velocity = atof(tokens[7].c_str()) / 1.943844;  // convert knot to m/s
       heading = atof(tokens[8].c_str())*3.1415926/180.;  // convert deg to rad
       //date = tokens[9]; //todo

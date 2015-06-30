@@ -59,6 +59,13 @@ Effibot::Effibot(string name, string ip, int port) :
   comm_check_sub = nh_.subscribe("comm_check", 1, &Effibot::commCheckCallback, this);  
   last_comm_time = ros::Time::now();
 
+
+  // main loop callback at 100Hz <--> 10ms 
+  main_loop_timer = nh_.createTimer(ros::Duration(0.010), &Effibot::main_loop, this);
+
+  // main loop callback at 1Hz <--> 1s 
+  connect_loop_timer = nh_.createTimer(ros::Duration(1), &Effibot::connect_loop, this);
+
   velocity_linear = 0.0;
   velocity_angular = 0.0;
 }
@@ -72,64 +79,52 @@ Effibot::~Effibot()
 }
 
 
+
 //-----------------------------------------------------------------------------
-void Effibot::start_loop()
+void Effibot::connect_loop(const ros::TimerEvent& e)
 {
-  while(!connected_) {
+  if(!connected_) {
     ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
     communication_.connectToVehicle(QString::fromStdString(ip_), port_);
-    ros::Duration(1).sleep();
-  }
-
-  if(!connected_)
-    return;
-
-  // Main loop updated at 100Hz
-  ros::Rate loop_rate(100);
-  
-  while(ros::ok()&&(connected_)) {
-    node_loop();
-    ros::spinOnce();
-    loop_rate.sleep();
   }
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::node_loop()
+void Effibot::main_loop(const ros::TimerEvent& e)
 {
-// FSM main loop
-  
   std_msgs::String string_msg;
   std_msgs::Float32 float_msg;  
-  
-  // publish node_state
-  string_msg.data = getNodeStateString(node_state_);
-  node_state_pub.publish(string_msg); 
 
-  // network watchdog check
-  ros::Duration delta_time = ros::Time::now() - last_comm_time;
-  double comm_delta_time = delta_time.toSec();
-  if(comm_delta_time>1.2) {
-    communication_.sendSpeedCommand(VehicleCommand(0,0));  
-    node_state_ = SECURITY_STOP;
-    return;
+  if(connected_) {
+    // publish node_state
+    string_msg.data = getNodeStateString(node_state_);
+    node_state_pub.publish(string_msg); 
+    
+    // network watchdog check
+    ros::Duration delta_time = ros::Time::now() - last_comm_time;
+    double comm_delta_time = delta_time.toSec();
+    if(comm_delta_time>1.2) {
+      v = 0;
+      w = 0;
+      communication_.sendSpeedCommand(VehicleCommand(0,0));  
+      node_state_ = SECURITY_STOP;
+      return;
+    }
+    else {
+      if(node_state_ == SECURITY_STOP)
+	node_state_ = IDLE;
+    }
+    
+    switch(node_state_) {
+    case IDLE:
+      break;
+    
+    case VELOCITY:
+      break;
+    }    
+    communication_.sendSpeedCommand(VehicleCommand(velocity_linear, velocity_angular));      
   }
-  else {
-    if(node_state_ == SECURITY_STOP)
-      node_state_ = IDLE;
-  }
-  
-  switch(node_state_) {
-  case IDLE:
-    break;
-
-  case VELOCITY:
-    break;
-  }    
-  communication_.sendSpeedCommand(VehicleCommand(velocity_linear, velocity_angular));  
 }
-
-
 
 //-----------------------------------------------------------------------------
 void Effibot::commCheckCallback(const std_msgs::Int32 & msg)
