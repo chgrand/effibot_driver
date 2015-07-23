@@ -397,10 +397,18 @@ void Effibot::onVehicleLidarDataReceived(const LidarData & data)
 
   // from doc sensor Hokuyo UTM-30LX-EW
   // range = 270 deg
-  // 1080 dots/scan
-  laser_msg.angle_min = -(135*M_PI/180);
-  laser_msg.angle_max = +(135*M_PI/180);
-  laser_msg.angle_increment = (270*M_PI/180)/1080;
+  // 1080 dots/scan --> 0.25°/scan
+
+  float lidar_fov = 170.0;
+  
+  int index_min = 540-(int)(lidar_fov*2);
+  int index_max = 540+(int)(lidar_fov*2);
+  if(index_min<0) index_min = 0;
+  if(index_max>data.scans.size()) index_max = data.scans.size();
+
+  laser_msg.angle_min = -(lidar_fov/2*M_PI/180.0);
+  laser_msg.angle_max = +(lidar_fov/2*M_PI/180.0);
+  laser_msg.angle_increment = (270.0*M_PI/180.0)/1080.0;
   laser_msg.time_increment = 0.0;
   laser_msg.scan_time = 0.0;
   laser_msg.range_min = 0.1;
@@ -408,7 +416,8 @@ void Effibot::onVehicleLidarDataReceived(const LidarData & data)
 
   laser_msg.ranges.clear();
   laser_msg.intensities.clear();
-  for (int i = 0; i < data.scans.size(); ++i) {
+  //for (int i = 0; i < data.scans.size(); ++i) {
+  for (int i = index_min; i < index_max; ++i) {
     laser_msg.ranges.push_back(data.scans[i].rho);
     laser_msg.intensities.push_back(0.0);
   }
