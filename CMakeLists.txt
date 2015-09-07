@@ -113,11 +113,11 @@ include_directories(
 #   src/${PROJECT_NAME}/effi_driver.cpp
 # )
 
-## Declare a cpp executable
-#add_executable(full_node 
-#  src/full_node.cpp
-#  src/effibot.cpp
-#)
+add_executable(full_node
+  src/driver_node_full.cpp
+  src/driver_full.cpp
+  src/gps_nmea_driver.cpp
+)
 
 
 add_executable(light_node
