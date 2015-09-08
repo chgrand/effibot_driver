@@ -7,7 +7,7 @@
 
 #include <unistd.h>
 #include <iostream>
-#include "driver_light.h"
+#include "driver_full.h"
 
 using namespace std;
 
@@ -18,7 +18,8 @@ Effibot::Effibot(string name, string ip, int port) :
     node_state_(SECURITY_STOP),
     robot_name(name),
     ip_(ip),
-    port_(port)
+    port_(port),
+    waypoints_ident(0)
 {
     // get parameters from ROS or use default values
     nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
@@ -112,7 +113,8 @@ void Effibot::main_loop(const ros::TimerEvent& e)
         if(comm_delta_time>1.2) {
             velocity_linear = 0.0;
             velocity_angular = 0.0;
-            communication_.sendSpeedCommand(VehicleCommand(0,0));
+	    communication_.cancelCommand();
+            //communication_.sendSpeedCommand(VehicleCommand(0,0));
             node_state_ = SECURITY_STOP;
             return;
         }
@@ -123,12 +125,16 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 
         switch(node_state_) {
         case IDLE:
-            break;
+	  communication_.sendSpeedCommand(VehicleCommand(0*velocity_linear, 0*velocity_angular));
+	  break;
 
         case VELOCITY:
-            break;
+	  communication_.sendSpeedCommand(VehicleCommand(velocity_linear, velocity_angular));
+	  break;
+
+	case WAYPOINT:
+	  break;
         }
-        communication_.sendSpeedCommand(VehicleCommand(velocity_linear, velocity_angular));
     }
 }
 
@@ -153,8 +159,11 @@ void Effibot::velocityCallback(const geometry_msgs::Twist::ConstPtr& msg)
     else if(w<-1.6) w=-1.6;
 
     if(node_state_ != SECURITY_STOP) {
-        velocity_linear = v;
-        velocity_angular = w;
+      if(node_state_ == WAYPOINT)
+	    communication_.cancelCommand();
+	
+      velocity_linear = v;
+      velocity_angular = w;
 
         //ROS_INFO("cmd_vel = (%.3f, %.3f)", v, w);
         //if(node_state_ == VELOCITY) {
@@ -229,6 +238,7 @@ void Effibot::onVehicleWaypointsReceived(int waypointListId)
 void Effibot::onVehicleWaypointReached(int waypointIndex)
 {
     std::cout << "Point de passage " << waypointIndex << " atteint." << std::endl;
+    node_state_ = IDLE;
 }
 
 //-----------------------------------------------------------------------------
@@ -248,6 +258,8 @@ std::string Effibot::getNodeStateString(node_state_t node_state)
         return "Idle";
     case VELOCITY:
         return("Velocity");
+    case WAYPOINT:
+        return("Waypoint");
     default:
         return "Unknown";
     }
@@ -293,7 +305,9 @@ std::string Effibot::getStateString(const VehicleState &state)
         return "state_failure_Waypoint_Unreachable";
 
     }
-    return "state_unknown";
+    char buffer[256];
+    sprintf(buffer,"state_unknown = %i", state);
+    return std::string(buffer);
 }
 
 
@@ -550,9 +564,11 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
 
     QString nmea_qstring(data.nmeaSentence);
     std::string s = nmea_qstring.toStdString();
-    std::cout << s << std::endl;
-    std:: cout << "Decode = " << gps_driver.scan(s) << std::endl;
-    gps_driver.print();
+    //std::cout << s << std::endl;
+    //std:: cout << "Decode = " << gps_driver.scan(s) << std::endl;
+    //gps_driver.print();
+
+    gps_driver.scan(s);
 
     std_msgs::Int32MultiArray array;
     array.data.clear();

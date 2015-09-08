@@ -38,6 +38,7 @@ public:
     typedef enum {
         SECURITY_STOP,
         VELOCITY,
+	WAYPOINT,
         IDLE
     } node_state_t;
 
@@ -160,7 +161,7 @@ private:
     node_state_t node_state_;
 
     // Waypoint control
-    //int waypoints_ident;
+    int waypoints_ident;
 
     std::string robot_name;
 };

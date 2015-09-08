@@ -15,7 +15,7 @@
 	  args="-0.18 -0.02 0.01 -1.57 0 0 $(arg agent)_base $(arg agent)_imu 10" />
 
     <node name="payload_monitor" pkg="effibot_driver" type="payload_monitor" />
-    <node name="driver" pkg="effibot_driver" type="light_node" 
+    <node name="driver" pkg="effibot_driver" type="full_node" 
 	  args="$(arg agent) $(arg ip) $(arg port)" output="screen">
     </node>
 
