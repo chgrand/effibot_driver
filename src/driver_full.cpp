@@ -19,7 +19,7 @@ Effibot::Effibot(string name, string ip, int port) :
     robot_name(name),
     ip_(ip),
     port_(port),
-    waypoints_ident(0)
+    waypoints_ident(1)
 {
     // get parameters from ROS or use default values
     nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
@@ -178,35 +178,66 @@ void Effibot::velocityCallback(const geometry_msgs::Twist::ConstPtr& msg)
 //-----------------------------------------------------------------------------
 void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
 {
-  WaypointList waypoints;
-  Waypoint point;
+  double goal_x = msg->position.x;
+  double goal_y = msg->position.y;
 
-  double x_goal = msg->position.x;
-  double y_goal = msg->position.y;
-  double utm_x = x_goal + utm_origin_x;
-  double utm_y = y_goal + utm_origin_y;
+  /*  double utm_x = goal_x + utm_origin_x;
+  double utm_y = goal_y + utm_origin_y;
   double lat_;
   double lon_;
   gps_common::UTMtoLL(utm_y, utm_x, "31T", lat_, lon_);
+  */
 
-  ROS_INFO("Receive Goto(%.3f, %.3f)", x_goal, y_goal);
-  ROS_INFO("Goto (utm): %.3f, %.3f", utm_x, utm_y);
-  ROS_INFO("Goto (gps): %.6f, %.6f", lon_, lat_);
+  double pose_x = pose[0];
+  double pose_y = pose[1];
+  double dx = goal_x-pose_x;
+  double dy = goal_y-pose_y;
+  double distance = sqrt(dx*dx+dy*dy);
+  double alpha = atan2(dy,dx);
+  double Ca = cos(alpha);
+  double Sa = sin(alpha);
+
+  ROS_INFO("Receive Goto(%.3f, %.3f)", goal_x, goal_y);
+  ROS_INFO("Current pos (%.3f, %.3f)", pose_x, pose_y);
+  ROS_INFO("Distance = %.3f", distance);
+  //ROS_INFO("Goto (utm): %.3f, %.3f", utm_x, utm_y);
+  //ROS_INFO("Goto (gps): %.6f, %.6f", lon_, lat_);
   //ROS_INFO("Goto (delta) : %.3f, %.3f", (lon_-current_lon_)*1e5, (lat_-current_lat_)*1e5);
 
+  double w_step = 5.0;
+  int wp_N = int(ceil(distance/w_step))+1;
+  double step = distance/wp_N;
+  ROS_INFO("Add %i points", wp_N);
+
+
+  WaypointList waypoints;
+
+  waypoints.id = waypoints_ident++;
+  if(waypoints_ident>255)
+    waypoints_ident = 1;
+
+  for(int i=0; i<wp_N;i++)
+    {
+      double x = pose_x + (i+1)*step*Ca;
+      double y = pose_y + (i+1)*step*Sa;
+      double utm_x = x + utm_origin_x;
+      double utm_y = y + utm_origin_y;
+      double lat_;
+      double lon_;
+      gps_common::UTMtoLL(utm_y, utm_x, "31T", lat_, lon_);
+      ROS_INFO("%.3f, %.3f -- %.6f, %.6f", x , y, lat_, lon_);
+
+      Waypoint point;
+      point.longitude   = lon_;
+      point.latitude    = lat_;
+      point.linearSpeed = 0.5;  // TODO PARAM
+      waypoints.append(point);
+
+      // TODO measure initial distance
+    }
   if (node_state_== IDLE) {
 
-    waypoints.id = waypoints_ident++;
-    if(waypoints_ident>255)
-        waypoints_ident = 1;
-
-    point.longitude   = lon_;
-    point.latitude    = lat_;
-    point.linearSpeed = 0.5;  // TODO PARAM
-    waypoints.append(point);
-
-    // TODO measure initial distance
-
+    waypointNum = wp_N;
     communication_.sendWaypointsCommand(waypoints);
     node_state_ = WAYPOINT;
     ROS_INFO("Action launched");
@@ -239,12 +270,27 @@ void Effibot::onVehicleWaypointReached(int waypointIndex)
 {
     std::cout << "Point de passage " << waypointIndex << " atteint." << std::endl;
     node_state_ = IDLE;
+
+    if(waypointIndex == (waypointNum-1))
+      {
+	std_msgs::String msg;
+	msg.data = "Success";
+	goto_status_pub.publish(msg);    //publish("Success");
+      }
 }
 
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleCommandCancelled()
 {
-    std::cout << "Commande cancelled !" << std::endl;
+  //std::cout << "Commande cancelled !" << std::endl;
+  if(node_state_ == WAYPOINT)
+  {
+    std::cout << "Waypoint cancelled !" << std::endl;    
+    std_msgs::String msg;
+    msg.data = "KO";
+    goto_status_pub.publish(msg);  
+    //  TODO test deplacement nul durant DT
+  }
 }
 
 
@@ -379,7 +425,6 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
 
     double v_x  = (vel_right+vel_left)/2;
     double v_th = (vel_right-vel_left)/(2*basewidth_);
-
 
     /*
       pose_x += v_x*delta_time*cos(pose_theta);
@@ -520,12 +565,14 @@ void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localiza
     double utm_y;
     std::string zone;
     gps_common::LLtoUTM(lat_, lon_, utm_y, utm_x, zone);
+    pose[0] = utm_x - utm_origin_x - gps_offset_x;
+    pose[1] = utm_y - utm_origin_y - gps_offset_y;
 
     geometry_msgs::PoseStamped pose_msg;
     pose_msg.header.stamp = ros::Time::now();
     pose_msg.header.frame_id = "odom";
-    pose_msg.pose.position.x = utm_x - utm_origin_x - gps_offset_x;
-    pose_msg.pose.position.y = utm_y - utm_origin_y - gps_offset_y;
+    pose_msg.pose.position.x = pose[0];
+    pose_msg.pose.position.y = pose[1];
     pose_pub.publish(pose_msg);
 }
 

@@ -144,12 +144,13 @@ private:
     double utm_origin_y;
     std::string utm_zone;
 
-    // Gps driver
+  double pose[2];
+  int waypointNum;
 
+    // Gps driver
     GpsNmeaDriver gps_driver;
 
-    //double current_lon_;
-    //double current_lat_;
+
 
     // Odometry
     //double odom_prev_date;
