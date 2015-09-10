@@ -146,6 +146,9 @@ private:
 
   double pose[2];
   int waypointNum;
+  int wp_blocked;
+  double twist_Vx;
+  double twist_Wz;
 
     // Gps driver
     GpsNmeaDriver gps_driver;

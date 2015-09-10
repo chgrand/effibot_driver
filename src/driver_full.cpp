@@ -133,7 +133,23 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 	  break;
 
 	case WAYPOINT:
+	  // If robot is stoped during  100*Te= 1s
+	  if((fabs(twist_Vx)<0.01)&&(fabs(twist_Wz)<0.01))
+	    wp_blocked++;
+	  else
+	    wp_blocked=0;
+	  
+	  if(wp_blocked>100)
+	    {
+	      std_msgs::String msg;
+	      msg.data = "Ko";
+	      goto_status_pub.publish(msg);
+	      node_state_ = IDLE;
+	      communication_.cancelCommand();
+	    }
+
 	  break;
+ 
         }
     }
 }
@@ -238,6 +254,7 @@ void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
   if (node_state_== IDLE) {
 
     waypointNum = wp_N;
+    wp_blocked = 0;
     communication_.sendWaypointsCommand(waypoints);
     node_state_ = WAYPOINT;
     ROS_INFO("Action launched");
@@ -269,13 +286,13 @@ void Effibot::onVehicleWaypointsReceived(int waypointListId)
 void Effibot::onVehicleWaypointReached(int waypointIndex)
 {
     std::cout << "Point de passage " << waypointIndex << " atteint." << std::endl;
-    node_state_ = IDLE;
 
     if(waypointIndex == (waypointNum-1))
       {
 	std_msgs::String msg;
 	msg.data = "Success";
 	goto_status_pub.publish(msg);    //publish("Success");
+	node_state_ = IDLE;
       }
 }
 
@@ -425,6 +442,9 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
 
     double v_x  = (vel_right+vel_left)/2;
     double v_th = (vel_right-vel_left)/(2*basewidth_);
+
+    twist_Vx = v_x;
+    twist_Wz = v_th;
 
     /*
       pose_x += v_x*delta_time*cos(pose_theta);
