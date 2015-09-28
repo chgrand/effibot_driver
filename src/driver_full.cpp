@@ -1,8 +1,9 @@
 //=============================================================================
 //
 //
-//  TODO : dyanmic_reconfigure : GPS_active, Bumper_active
-//  TODO : namespace -->tf
+//  TODO :
+//  - dyanmic_reconfigure : GPS_active, Bumper_active
+//  - goto/feedback
 //
 
 #include <unistd.h>
@@ -40,9 +41,12 @@ Effibot::Effibot(string name, string ip, int port) :
     nh_.setParam("state/GPS", gps_active_);
 
     // Publisher (sensors data)
-    mode_pub = nh_.advertise<std_msgs::String>("mode",1);
-    node_state_pub = nh_.advertise<std_msgs::String>("node_state", 1);
-    state_pub = nh_.advertise<std_msgs::String>("state", 1);
+    #mode_pub = nh_.advertise<std_msgs::String>("mode",1);
+    #node_state_pub = nh_.advertise<std_msgs::String>("node_state", 1);
+    #state_pub = nh_.advertise<std_msgs::String>("state", 1);
+    mode_pub = nh_.advertise<std_msgs::String>("control_mode",1);
+    node_state_pub = nh_.advertise<std_msgs::String>("driver_state", 1);
+    state_pub = nh_.advertise<std_msgs::String>("robot_state", 1);
     battery_pub = nh_.advertise<std_msgs::Float32>("robot_battery", 1);
     odometry_pub = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
     motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("motors_current",1);
@@ -125,7 +129,7 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 
         switch(node_state_) {
         case IDLE:
-	  communication_.sendSpeedCommand(VehicleCommand(0*velocity_linear, 0*velocity_angular));
+            communication_.sendSpeedCommand(VehicleCommand(0, 0); //*velocity_linear, 0*velocity_angular));
 	  break;
 
         case VELOCITY:
@@ -138,7 +142,7 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 	    wp_blocked++;
 	  else
 	    wp_blocked=0;
-	  
+
 	  if(wp_blocked>100)
 	    {
 	      std_msgs::String msg;
@@ -149,7 +153,6 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 	    }
 
 	  break;
- 
         }
     }
 }
@@ -177,7 +180,7 @@ void Effibot::velocityCallback(const geometry_msgs::Twist::ConstPtr& msg)
     if(node_state_ != SECURITY_STOP) {
       if(node_state_ == WAYPOINT)
 	    communication_.cancelCommand();
-	
+
       velocity_linear = v;
       velocity_angular = w;
 
@@ -302,10 +305,10 @@ void Effibot::onVehicleCommandCancelled()
   //std::cout << "Commande cancelled !" << std::endl;
   if(node_state_ == WAYPOINT)
   {
-    std::cout << "Waypoint cancelled !" << std::endl;    
+      std::cout << "Waypoint cancelled !" << std::endl;
     std_msgs::String msg;
     msg.data = "KO";
-    goto_status_pub.publish(msg);  
+    goto_status_pub.publish(msg);
     //  TODO test deplacement nul durant DT
   }
 }
