@@ -7,7 +7,7 @@
 #include <dga-external-component-protocol/VehicleCommunication.hpp>
 #include <dga-external-component-protocol/Common/Types.hpp>
 
-#include "driver_light.h"
+#include "driver_full.h"
 
 using namespace std;
 
@@ -26,8 +26,7 @@ int main(int argc, char **argv)
   string ip = argv[2];
   int port = atoi(argv[3]);
 
-  ROS_INFO("Start effibot driver for robot %s on %s:%i", 
-	   name.c_str(), ip.c_str(), port); 
+  ROS_INFO("Start effibot driver for robot %s on %s:%i", name.c_str(), ip.c_str(), port); 
   Effibot effibot_driver(name, ip, port);
   ros::spin();
   //effibot_driver.start_loop();

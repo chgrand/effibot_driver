@@ -41,9 +41,9 @@ Effibot::Effibot(string name, string ip, int port) :
     nh_.setParam("state/GPS", gps_active_);
 
     // Publisher (sensors data)
-    #mode_pub = nh_.advertise<std_msgs::String>("mode",1);
-    #node_state_pub = nh_.advertise<std_msgs::String>("node_state", 1);
-    #state_pub = nh_.advertise<std_msgs::String>("state", 1);
+    //mode_pub = nh_.advertise<std_msgs::String>("mode",1);
+    //node_state_pub = nh_.advertise<std_msgs::String>("node_state", 1);
+    //state_pub = nh_.advertise<std_msgs::String>("state", 1);
     mode_pub = nh_.advertise<std_msgs::String>("control_mode",1);
     node_state_pub = nh_.advertise<std_msgs::String>("driver_state", 1);
     state_pub = nh_.advertise<std_msgs::String>("robot_state", 1);
@@ -129,7 +129,7 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 
         switch(node_state_) {
         case IDLE:
-            communication_.sendSpeedCommand(VehicleCommand(0, 0); //*velocity_linear, 0*velocity_angular));
+	  communication_.sendSpeedCommand(VehicleCommand(0, 0)); //*velocity_linear, 0*velocity_angular));
 	  break;
 
         case VELOCITY:
