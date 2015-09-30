@@ -244,7 +244,7 @@ void Effibot::waypointCallback(const geometry_msgs::Pose::ConstPtr & msg)
       double lat_;
       double lon_;
       gps_common::UTMtoLL(utm_y, utm_x, "31T", lat_, lon_);
-      ROS_INFO("%.3f, %.3f -- %.6f, %.6f", x , y, lat_, lon_);
+      //ROS_INFO("%.3f, %.3f -- %.6f, %.6f", x , y, lat_, lon_);
 
       Waypoint point;
       point.longitude   = lon_;
