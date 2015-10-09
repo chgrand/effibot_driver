@@ -1,6 +1,6 @@
 // -*-c++-*-
-#ifndef DRIVER_LIGHT_H
-#define DRIVER_LIGHT_H
+#ifndef DRIVER_H
+#define DRIVER_H
 
 // ROS
 #include <ros/ros.h>
@@ -103,8 +103,10 @@ private:
     ros::Publisher  imu_pub;
     ros::Publisher  laser_pub;
     ros::Publisher  gps_pub;
+    ros::Publisher  gps_lla_pub;
     ros::Publisher  gps_info_pub;
     ros::Publisher  gps_hdop_pub;
+    ros::Publisher  pub_pose_comm;
 
     //tf::TransformBroadcaster odom_broadcaster;
     //ros::Timer loop_timer_;

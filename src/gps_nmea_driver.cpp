@@ -1,10 +1,10 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
-#include <string> 
+#include <string>
 #include <stdlib.h>
 #include <cmath>
-#include <iomanip>  
+#include <iomanip>
 #include "gps_nmea_driver.h"
 
 //#define __DEBUG__
@@ -106,7 +106,7 @@ double convert_latitude(string value, string way)
   //cout << "Lat.mm  = " << mm << endl;
   return (dd+mm/60.)*(way=="N"?+1:-1);
 };
-    
+
 //-----------------------------------------------------------------------------
 double convert_longitude(string value, string way)
 {
@@ -120,11 +120,11 @@ double convert_longitude(string value, string way)
 
 
 //-----------------------------------------------------------------------------
-bool GpsNmeaDriver::scan(string nmea)
+msg_type_t GpsNmeaDriver::scan(string nmea)
 {
   // Force position data to invalid
   // --> take new pos into account only if GPGGA received
- fix_type = 0;
+    //fix_type = 0;
 
   // Extract data and checksum
   int start = nmea.find('$')+1;
@@ -144,31 +144,31 @@ bool GpsNmeaDriver::scan(string nmea)
   #ifdef __DEBUG__
   cout << hex << uppercase << chksum << dec << endl;
   #endif
-  
+
   // If checksum is ok
   if (chksum==chksum_int) {
     // Spilt data into tokens
     vector<string> tokens;
     split(&tokens, data, ",");
     #ifdef __DEBUG__
-    for (vector<string>::iterator it = tokens.begin(); 
+    for (vector<string>::iterator it = tokens.begin();
 	 it!=tokens.end(); ++it)
       cout << *it << endl;
     cout << data << endl;
     #endif
-    
+
     // Analyse token of a given message type
     if( tokens[0]=="GPGGA") {
       //time = 0; // TODO convertion
       latitude = convert_latitude(tokens[2],tokens[3]);
-      longitude = convert_longitude(tokens[4], tokens[5]); 
-	//(float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
+      longitude = convert_longitude(tokens[4], tokens[5]);
+      //(float)atof(tokens[4].c_str())*(tokens[5]=="E"?+1:-1);
       fix_type = atoi(tokens[6].c_str());
       num_sat_tracked = atoi(tokens[7].c_str());
       //HDOP =  (double)atof(tokens[8].c_str());
       HDOP = StringToNumber<double>(tokens[8]);
-      altitude = atof(tokens[9].c_str());      
-      return true;
+      altitude = atof(tokens[9].c_str());
+      return GPGGA;
     }
 
     if( tokens[0]=="GPRMC") {
@@ -176,18 +176,18 @@ bool GpsNmeaDriver::scan(string nmea)
       //latitude = atof(tokens[3].c_str())*(tokens[4]=="N"?+1:-1);
       //longitude = atof(tokens[5].c_str())*(tokens[6]=="E"?+1:-1);
       latitude = convert_latitude(tokens[3],tokens[4]);
-      longitude = convert_longitude(tokens[5], tokens[6]); 
+      longitude = convert_longitude(tokens[5], tokens[6]);
       velocity = atof(tokens[7].c_str()) / 1.943844;  // convert knot to m/s
       heading = atof(tokens[8].c_str())*3.1415926/180.;  // convert deg to rad
       //date = tokens[9]; //todo
-      deviation = atof(tokens[10].c_str());      
-      return true;
+      deviation = atof(tokens[10].c_str());
+      return GPRMC;
     }
-    
+
     if( tokens[0]=="GPGSV") {
       num_sat_viewed = atoi(tokens[3].c_str());
-      return true;
+      return GPGSV;
     }
   }
-  return false;
+  return UNKNOWN;
 }

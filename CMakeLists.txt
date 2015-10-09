@@ -113,24 +113,11 @@ include_directories(
 #   src/${PROJECT_NAME}/effi_driver.cpp
 # )
 
-add_executable(full_node
-  src/driver_node_full.cpp
-  src/driver_full.cpp
+add_executable(driver_node
+  src/driver_node.cpp
+  src/driver.cpp
   src/gps_nmea_driver.cpp
 )
-
-
-add_executable(light_node
-  src/driver_node_light.cpp
-  src/driver_light.cpp
-  src/gps_nmea_driver.cpp
-)
-
-## Add cmake target dependencies of the executable/library
-## as an example, message headers may need to be generated before nodes
-# add_dependencies(effi_driver_node effi_driver_generate_messages_cpp)
-
-## Specify libraries to link a library or executable target against
 
 target_link_libraries(full_node
  ${catkin_LIBRARIES}
@@ -138,11 +125,25 @@ target_link_libraries(full_node
   dga-external-component-protocol
 )
 
-target_link_libraries(light_node
-  ${catkin_LIBRARIES}
-  Qt5::Core
-  dga-external-component-protocol
-)
+
+# add_executable(light_node
+#   src/driver_node_light.cpp
+#   src/driver_light.cpp
+#   src/gps_nmea_driver.cpp
+# )
+
+# target_link_libraries(light_node
+#   ${catkin_LIBRARIES}
+#   Qt5::Core
+#   dga-external-component-protocol
+# )
+
+## Add cmake target dependencies of the executable/library
+## as an example, message headers may need to be generated before nodes
+# add_dependencies(effi_driver_node effi_driver_generate_messages_cpp)
+
+## Specify libraries to link a library or executable target against
+
 
 
 #############

@@ -22,9 +22,15 @@ public:
     SIMULATION_MODE
   } gps_fixe_t;
 
+    typedef enum {
+        GPGGA,
+        GPRMC,
+        GPGSV,
+        UNKNOWN
+    } msg_type_t;
 
   GpsNmeaDriver();
-  bool scan(string nmea);
+  msg_type_t scan(string nmea);
   void print();
 
   double getLongitude() {return longitude;}
