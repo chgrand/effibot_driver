@@ -26,7 +26,7 @@ ser.write(''.join(chr(x) for x in byte_data))
 
 # Init ros node
 rospy.init_node('payload_monitor', anonymous=True)
-pub = rospy.Publisher('payload_battery', Float32, queue_size=1)
+pub = rospy.Publisher('status/payload_battery', Float32, queue_size=1)
 rate = rospy.Rate(1) # 1hz
 
 while not rospy.is_shutdown():

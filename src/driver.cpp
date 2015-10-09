@@ -48,18 +48,18 @@ Effibot::Effibot(string name, string ip, int port) :
     node_state_pub = nh_.advertise<std_msgs::String>("status/payload_state", 1);
     state_pub = nh_.advertise<std_msgs::String>("status/robot_state", 1);
     battery_pub = nh_.advertise<std_msgs::Float32>("status/robot_battery", 1);
-    pub_pose_comm = nh_.advertise<geometry_msgs::PoseStamped>("pose",1);
+    //pub_pose_comm = nh_.advertise<geometry_msgs::PoseStamped>("status/pose",1);
     gps_pub = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("gps/utm_pose",1);
     gps_lla_pub = nh_.advertise<sensor_msgs::NavSatFix>("gps/lla_pose",1);
     gps_info_pub = nh_.advertise<std_msgs::Int32MultiArray>("gps/info", 1);
     gps_hdop_pub = nh_.advertise<std_msgs::Float32>("gps/hdop", 1);
+    pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("pose",1);
 
-    // Sensor info to be published at robot_driver frequency (supposed to be 100Hz)
-    odometry_pub = nh_.advertise<nav_msgs::Odometry>("odometry", 1);
-    motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("motors_current",1);
-    pose_pub = nh_.advertise<geometry_msgs::PoseStamped>("utm_pose",1);
-    imu_pub = nh_.advertise<sensor_msgs::Imu>("imu/data",1);
-    laser_pub = nh_.advertise<sensor_msgs::LaserScan>("laser/scan",1);
+    // Sensor info to be published at robot_driver frequency (supposed to be 20Hz-50Hz)
+    odometry_pub = nh_.advertise<nav_msgs::Odometry>("sensors/odometry", 1);
+    motor_current_pub = nh_.advertise<std_msgs::Float32MultiArray> ("sensors/motors_current",1);
+    imu_pub = nh_.advertise<sensor_msgs::Imu>("sensors/imu/data",1);
+    laser_pub = nh_.advertise<sensor_msgs::LaserScan>("sensors/laser/scan",1);
 
     // Subscribers
     // ===========
@@ -135,13 +135,6 @@ void Effibot::comm_loop(const ros::TimerEvent& e)
         std_msgs::String mode_msg;
         mode_msg.data = getModeString(robot_mode_);
         mode_pub.publish(mode_msg);
-
-        geometry_msgs::PoseStamped pose_msg;
-        pose_msg.header.stamp = ros::Time::now();
-        pose_msg.header.frame_id = "odom";
-        pose_msg.pose.position.x = pose[0];
-        pose_msg.pose.position.y = pose[1];
-        pub_pose_comm.publish(pose_msg);
     }
 }
 
@@ -380,10 +373,10 @@ std::string Effibot::getModeString(const VehicleMode &mode)
     switch (mode)
     {
     case ModeManual:
-        return "Mode PadControl";
+        return "WinPad_Control";
 
     case ModeExternalComponent:
-        return "Mode Payload";
+        return "Payload_Control";
 
     }
     return "mode_unknown";

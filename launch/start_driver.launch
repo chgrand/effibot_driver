@@ -5,7 +5,6 @@
 
   <!-- Define UTM origin as function of site argument -->
   <arg name="site" default="caylus"/>
-  <include file="utm_$(arg site).launch" />
   <include file="$(find effibot_driver)/launch/utm_$(arg site).launch" />
  
   <group ns="$(arg agent)">
@@ -22,7 +21,7 @@
     <node name="watchdog_node" pkg="effibot_driver" type="watchdog_node" />
     <node name="driver" pkg="effibot_driver" type="driver_node" 
 	  args="$(arg agent) $(arg ip) $(arg port)" output="screen">
-      <remap from="effibox/utm_pose" to="pose" />
+      <!--remap from="effibox/utm_pose" to="pose" /-->
     </node>
     
   </group>
