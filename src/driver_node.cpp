@@ -7,7 +7,7 @@
 #include <dga-external-component-protocol/VehicleCommunication.hpp>
 #include <dga-external-component-protocol/Common/Types.hpp>
 
-#include "driver_full.h"
+#include "driver.h"
 
 using namespace std;
 

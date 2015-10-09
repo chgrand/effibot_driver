@@ -120,7 +120,7 @@ double convert_longitude(string value, string way)
 
 
 //-----------------------------------------------------------------------------
-msg_type_t GpsNmeaDriver::scan(string nmea)
+GpsNmeaDriver::msg_type_t GpsNmeaDriver::scan(string nmea)
 {
   // Force position data to invalid
   // --> take new pos into account only if GPGGA received

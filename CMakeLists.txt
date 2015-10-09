@@ -119,7 +119,7 @@ add_executable(driver_node
   src/gps_nmea_driver.cpp
 )
 
-target_link_libraries(full_node
+target_link_libraries(driver_node
  ${catkin_LIBRARIES}
   Qt5::Core
   dga-external-component-protocol

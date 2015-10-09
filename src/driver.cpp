@@ -65,7 +65,7 @@ Effibot::Effibot(string name, string ip, int port) :
     // ===========
 
     // Reset action
-    pub_reset_action = nh_.subscribe("reset_action", 1, &Effibot::resetAction, this);
+    sub_reset_action = nh_.subscribe("reset_action", 1, &Effibot::resetAction, this);
 
     // Subsribe to control input
     cmd_vel_sub = nh_.subscribe("cmd_vel", 1, &Effibot::velocityCallback, this);
@@ -83,7 +83,7 @@ Effibot::Effibot(string name, string ip, int port) :
 
 
     // comm loop callback at 10Hz <--> 100ms
-    loop_comm_timer = nh_.createTimer(ros::Duration(0.100), &Effibot::loop_comm, this);
+    loop_comm_timer = nh_.createTimer(ros::Duration(0.100), &Effibot::comm_loop, this);
 
     // main loop callback at 100Hz <--> 10ms
     main_loop_timer = nh_.createTimer(ros::Duration(0.010), &Effibot::main_loop, this);
@@ -120,6 +120,7 @@ void Effibot::comm_loop(const ros::TimerEvent& e)
     if(connected_)
     {
         // publish node_state
+        std_msgs::String string_msg;
         string_msg.data = getNodeStateString(node_state_);
         node_state_pub.publish(string_msg);
 
@@ -203,9 +204,9 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::resetAction(const std_msgs::Bool & msg)
+void Effibot::resetAction(const std_msgs::Empty& msg)
 {
-    if(msg.data)
+  //if(msg.data)
     {
         communication_.cancelCommand();
         node_state_ = IDLE;
@@ -666,7 +667,7 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
     gps_hdop_pub.publish(msg);
 
 
-    if((ret == GPGGA)||(ret==GPRMC))
+    if((ret == GpsNmeaDriver::GPGGA)||(ret==GpsNmeaDriver::GPRMC))
     {
         // Converte GPS coordinate to UTM
         double utm_x;
@@ -698,7 +699,7 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
         lla_msg.status.status = gps_driver.getFixType();
         lla_msg.status.service = sensor_msgs::NavSatStatus::SERVICE_GPS;
         lla_msg.latitude  = gps_driver.getLatitude();
-        lla_msg.longitude = gps_driver.getLongidute();
+        lla_msg.longitude = gps_driver.getLongitude();
         lla_msg.altitude  = gps_driver.getAltitude();
 
         // Covariance

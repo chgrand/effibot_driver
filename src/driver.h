@@ -9,6 +9,7 @@
 #include <std_msgs/Float32.h>
 #include <std_msgs/Float32MultiArray.h>
 #include <std_msgs/String.h>
+#include <std_msgs/Empty.h>
 #include <geometry_msgs/Twist.h>
 #include <geometry_msgs/Pose.h>
 #include <geometry_msgs/Point.h>
@@ -49,9 +50,11 @@ private:
     // ROS callback
     void waypointCallback(const geometry_msgs::Pose::ConstPtr& msg);
     void velocityCallback(const geometry_msgs::Twist::ConstPtr& msg);
-    void commCheckCallback(const std_msgs::Int32 & msg);
+    void commCheckCallback(const std_msgs::Int32& msg);
     void connect_loop(const ros::TimerEvent& e);
     void main_loop(const ros::TimerEvent& e);
+    void comm_loop(const ros::TimerEvent& e);
+    void resetAction(const std_msgs::Empty& msg);
 
 
     // Effibot callback (from Qt Thread)
@@ -87,6 +90,7 @@ private:
     ros::NodeHandle nh_;
     ros::Subscriber cmd_vel_sub;
     ros::Subscriber comm_check_sub;
+    ros::Subscriber  sub_reset_action;
 
     ros::Subscriber goto_goal_sub;      // geometry_msgs::Point
     ros::Publisher goto_feedback_pub;   // std_msgs::Float32 
@@ -110,6 +114,7 @@ private:
 
     //tf::TransformBroadcaster odom_broadcaster;
     //ros::Timer loop_timer_;
+    ros::Timer loop_comm_timer;
     ros::Timer connect_loop_timer;
     ros::Timer main_loop_timer;
 
