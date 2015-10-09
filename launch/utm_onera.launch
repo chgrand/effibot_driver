@@ -1,4 +1,5 @@
 <launch>
+  <param name="site" type="string" value="onera" />
   <param name="utm_origin_x" type="double" value= "376734.39" />
   <param name="utm_origin_y" type="double" value= "4825392.59" />
   <param name="utm_zone" type="string" value="31T" />
