@@ -8,8 +8,8 @@
   <include file="$(find effibot_driver)/launch/utm_$(arg site).launch" />
  
   <group ns="$(arg agent)">
-    <param name="state/gps" type="int" value="1" />
-    <param name="state/bumper" type="int" value="1" />
+    <param name="state/gps" type="bool" value="true" />
+    <param name="state/bumper" type="bool" value="true" />
 
     <node pkg="tf" type="static_transform_publisher" name="base_to_laser"
 	  args="0 0 0.200 0 0.35 0 $(arg agent)_base $(arg agent)_laser 10" />

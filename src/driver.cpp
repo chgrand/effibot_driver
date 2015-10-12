@@ -2,7 +2,6 @@
 //
 //
 //  TODO :
-//  - dyanmic_reconfigure : GPS_active, Bumper_active
 //  - goto/feedback
 //
 
@@ -26,8 +25,8 @@ Effibot::Effibot(string name, string ip, int port) :
     nh_.param<double>("basewidth", basewidth_, 0.515); // 515 mm (robot manual)
     nh_.param<double>("gps/offset/x", gps_offset_x, 0.); // 0 mm (robot manual)
     nh_.param<double>("gps/offset/y", gps_offset_y, -0.165); // 165 mm (robot manual)
-    nh_.param<int>("state/bumper", bumper_active_, 1);
-    nh_.param<int>("state/GPS", gps_active_, 1);
+    nh_.param<bool>("state/bumper", bumper_active_, true);
+    nh_.param<bool>("state/gps", gps_active_, true);
 
     // Global parameters
     nh_.param<double>("/utm_origin_x", utm_origin_x, 0);
@@ -38,7 +37,11 @@ Effibot::Effibot(string name, string ip, int port) :
     // set parmeters to show default values
     nh_.setParam("basewidth", basewidth_);
     nh_.setParam("state/bumper", bumper_active_);
-    nh_.setParam("state/GPS", gps_active_);
+    nh_.setParam("state/gps", gps_active_);
+
+
+    // Service config
+    srv_SetConfig = nh_.advertiseService("set_config", &Effibot::setConfig, this);
 
     // Publisher (sensors data)
     // ========================
@@ -48,7 +51,6 @@ Effibot::Effibot(string name, string ip, int port) :
     node_state_pub = nh_.advertise<std_msgs::String>("status/payload_state", 1);
     state_pub = nh_.advertise<std_msgs::String>("status/robot_state", 1);
     battery_pub = nh_.advertise<std_msgs::Float32>("status/robot_battery", 1);
-    //pub_pose_comm = nh_.advertise<geometry_msgs::PoseStamped>("status/pose",1);
     gps_pub = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("gps/utm_pose",1);
     gps_lla_pub = nh_.advertise<sensor_msgs::NavSatFix>("gps/lla_pose",1);
     gps_info_pub = nh_.advertise<std_msgs::Int32MultiArray>("gps/info", 1);
@@ -75,13 +77,14 @@ Effibot::Effibot(string name, string ip, int port) :
     comm_check_sub = nh_.subscribe("comm_check", 1, &Effibot::commCheckCallback, this);
     last_comm_time = ros::Time::now();
 
+
+    
+
     // Waypoint function
     // =================
     goto_goal_sub = nh_.subscribe("goto/goal", 1, &Effibot::waypointCallback, this);
     goto_feedback_pub = nh_.advertise<std_msgs::Float32>("goto/feedback", 1);
     goto_status_pub = nh_.advertise<std_msgs::String>("goto/status", 1);
-
-
     // comm loop callback at 10Hz <--> 100ms
     loop_comm_timer = nh_.createTimer(ros::Duration(0.100), &Effibot::comm_loop, this);
 
@@ -95,7 +98,6 @@ Effibot::Effibot(string name, string ip, int port) :
     velocity_angular = 0.0;
 }
 
-
 //-----------------------------------------------------------------------------
 Effibot::~Effibot()
 {
@@ -104,6 +106,26 @@ Effibot::~Effibot()
 }
 
 
+//-----------------------------------------------------------------------------
+bool Effibot::setConfig(effibot_msg::SetConfig::Request &req, effibot_msg::SetConfig::Response &res)  
+{
+  gps_active_=req.gps_state;
+  bumper_active_ = req.bumper_state;
+  nh_.setParam("state/bumper", bumper_active_);
+  nh_.setParam("state/GPS", gps_active_);
+  communication_.setBumperActive(req.bumper_state);
+  communication_.setGpsActive(req.gps_state);
+  res.status="Ok";
+  if(gps_active_)
+    ROS_INFO("GPS activated");
+  else
+    ROS_INFO("GPS desactivated");
+  if(bumper_active_)
+    ROS_INFO("Bumper activated");
+  else
+    ROS_INFO("Bumper desactivated");
+  return true;
+}
 
 //-----------------------------------------------------------------------------
 void Effibot::connect_loop(const ros::TimerEvent& e)
@@ -201,6 +223,7 @@ void Effibot::resetAction(const std_msgs::Empty& msg)
 {
   //if(msg.data)
     {
+      ROS_INFO("Reset action received");
         communication_.cancelCommand();
         node_state_ = IDLE;
     }
@@ -418,15 +441,12 @@ void Effibot::onVehicleConnected()
 {
     connected_ = true;
     ROS_INFO("Vehicle connected");
-    if(bumper_active_)
-        communication_.setBumperActive(true);
-    else
-        communication_.setBumperActive(false);
-    if(gps_active_)
-        communication_.setGpsActive(true);
-    else
-        communication_.setGpsActive(false);
+    communication_.setBumperActive(bumper_active_);
+    communication_.setGpsActive(gps_active_);
 }
+
+
+
 
 //-----------------------------------------------------------------------------
 void Effibot::onVehicleDisconnected()

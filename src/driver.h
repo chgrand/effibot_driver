@@ -21,6 +21,8 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 
+#include <effibot_msg/SetConfig.h>
+
 #include "gps_nmea_driver.h"
 #include "conversions.h"
 
@@ -55,7 +57,8 @@ private:
     void main_loop(const ros::TimerEvent& e);
     void comm_loop(const ros::TimerEvent& e);
     void resetAction(const std_msgs::Empty& msg);
-
+ 
+  bool setConfig(effibot_msg::SetConfig::Request &req, effibot_msg::SetConfig::Response &res);
 
     // Effibot callback (from Qt Thread)
     void onVehicleConnected();
@@ -112,6 +115,9 @@ private:
     ros::Publisher  gps_hdop_pub;
     ros::Publisher  pub_pose_comm;
 
+  // Service
+  ros::ServiceServer srv_SetConfig;
+
     //tf::TransformBroadcaster odom_broadcaster;
     //ros::Timer loop_timer_;
     ros::Timer loop_comm_timer;
@@ -138,8 +144,8 @@ private:
     float battery_;
     VehicleMode robot_mode_;
     VehicleState robot_state_;
-    int bumper_active_;
-    int gps_active_;
+    bool bumper_active_;
+    bool gps_active_;
 
     // Robot property (used for odometry computation)
     double basewidth_;     // lateral distance between wheels
