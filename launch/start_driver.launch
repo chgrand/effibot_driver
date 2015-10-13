@@ -2,6 +2,7 @@
   <arg name="agent" default="$(env ROBOT_NAME)"/>
   <arg name="ip"    default="172.16.51.70" />
   <arg name="port"  default="14251" />
+  <arg name="goto_enabled" default="ftrue" />
 
   <!-- Define UTM origin as function of site argument -->
   <arg name="site" default="caylus"/>
@@ -20,7 +21,7 @@
     <node name="payload_monitor" pkg="effibot_driver" type="payload_monitor" />
     <node name="watchdog_node" pkg="effibot_driver" type="watchdog_node" />
     <node name="driver" pkg="effibot_driver" type="driver_node" 
-	  args="$(arg agent) $(arg ip) $(arg port)" output="screen">
+	  args="$(arg agent) $(arg ip) $(arg port) $(arg goto_enabled)" output="screen">
       <!--remap from="effibox/utm_pose" to="pose" /-->
     </node>
     

@@ -12,7 +12,7 @@
 using namespace std;
 
 //-----------------------------------------------------------------------------
-Effibot::Effibot(string name, string ip, int port) :
+Effibot::Effibot(string name, string ip, int port, bool goto_enabled) :
     communication_(this),
     connected_(false),
     node_state_(SECURITY_STOP),
@@ -79,12 +79,19 @@ Effibot::Effibot(string name, string ip, int port) :
 
 
     
+    if(goto_enabled)
+      {
+	// Waypoint function
+	// =================
+	goto_goal_sub = nh_.subscribe("goto/goal", 1, &Effibot::waypointCallback, this);
+	goto_feedback_pub = nh_.advertise<std_msgs::Float32>("goto/feedback", 1);
+	goto_status_pub = nh_.advertise<std_msgs::String>("goto/status", 1);
+      }
 
-    // Waypoint function
-    // =================
-    goto_goal_sub = nh_.subscribe("goto/goal", 1, &Effibot::waypointCallback, this);
-    goto_feedback_pub = nh_.advertise<std_msgs::Float32>("goto/feedback", 1);
-    goto_status_pub = nh_.advertise<std_msgs::String>("goto/status", 1);
+
+    // Periodic loops
+    // ==============
+
     // comm loop callback at 10Hz <--> 100ms
     loop_comm_timer = nh_.createTimer(ros::Duration(0.100), &Effibot::comm_loop, this);
 
@@ -207,7 +214,7 @@ void Effibot::main_loop(const ros::TimerEvent& e)
             if(wp_blocked>100)
             {
                 std_msgs::String msg;
-                msg.data = "Ko - Robot blocked";
+                msg.data = "Ko -- Robot blocked";
                 goto_status_pub.publish(msg);
                 node_state_ = IDLE;
                 communication_.cancelCommand();
@@ -222,10 +229,10 @@ void Effibot::main_loop(const ros::TimerEvent& e)
 void Effibot::resetAction(const std_msgs::Empty& msg)
 {
   //if(msg.data)
-    {
+  {
       ROS_INFO("Reset action received");
-        communication_.cancelCommand();
-        node_state_ = IDLE;
+      communication_.cancelCommand();
+      node_state_ = IDLE;
     }
 }
 
@@ -367,7 +374,7 @@ void Effibot::onVehicleCommandCancelled()
     {
         std::cout << "Waypoint cancelled !" << std::endl;
         std_msgs::String msg;
-        msg.data = "Ko - command canceled";
+        msg.data = "Ko -- command canceled";
         goto_status_pub.publish(msg);
     }
 }

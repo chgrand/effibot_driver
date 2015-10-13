@@ -45,7 +45,7 @@ public:
         IDLE
     } node_state_t;
 
-    Effibot(std::string name, std::string ip, int port);
+  Effibot(std::string name, std::string ip, int port, bool goto_enabled);
     ~Effibot();
 
 private:
