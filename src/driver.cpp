@@ -211,10 +211,10 @@ void Effibot::main_loop(const ros::TimerEvent& e)
             else
                 wp_blocked=0;
 
-            if(wp_blocked>100)
+            if(wp_blocked>500)
             {
                 std_msgs::String msg;
-                msg.data = "Ko -- Robot blocked";
+                msg.data = "ko";// -- Robot blocked";
                 goto_status_pub.publish(msg);
                 node_state_ = IDLE;
                 communication_.cancelCommand();
@@ -374,7 +374,7 @@ void Effibot::onVehicleCommandCancelled()
     {
         std::cout << "Waypoint cancelled !" << std::endl;
         std_msgs::String msg;
-        msg.data = "Ko -- command canceled";
+        msg.data = "Erreur -- command canceled";
         goto_status_pub.publish(msg);
     }
 }
