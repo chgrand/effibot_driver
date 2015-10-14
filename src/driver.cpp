@@ -361,8 +361,8 @@ void Effibot::onVehicleWaypointReached(int waypointIndex)
     if(waypointIndex == (waypointNum-1))
     {
         std_msgs::String msg;
-        msg.data = "Success";
-        goto_status_pub.publish(msg);    //publish("Success");
+        msg.data = "ok";
+        goto_status_pub.publish(msg);
         node_state_ = IDLE;
     }
 }
