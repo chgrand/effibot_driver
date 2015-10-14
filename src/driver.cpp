@@ -114,7 +114,7 @@ Effibot::~Effibot()
 
 
 //-----------------------------------------------------------------------------
-bool Effibot::setConfig(effibot_msg::SetConfig::Request &req, effibot_msg::SetConfig::Response &res)  
+bool Effibot::setConfig(effibot_msgs::SetConfig::Request &req, effibot_msgs::SetConfig::Response &res)  
 {
   gps_active_=req.gps_state;
   bumper_active_ = req.bumper_state;

@@ -21,7 +21,7 @@
 #include <nav_msgs/Odometry.h>
 #include <tf/transform_broadcaster.h>
 
-#include <effibot_msg/SetConfig.h>
+#include <effibot_msgs/SetConfig.h>
 
 #include "gps_nmea_driver.h"
 #include "conversions.h"
@@ -58,7 +58,7 @@ private:
     void comm_loop(const ros::TimerEvent& e);
     void resetAction(const std_msgs::Empty& msg);
  
-  bool setConfig(effibot_msg::SetConfig::Request &req, effibot_msg::SetConfig::Response &res);
+  bool setConfig(effibot_msgs::SetConfig::Request &req, effibot_msgs::SetConfig::Response &res);
 
     // Effibot callback (from Qt Thread)
     void onVehicleConnected();
