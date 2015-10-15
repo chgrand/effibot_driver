@@ -146,7 +146,7 @@ void EffibotBridge::onVehicleStatusReceived(const VehicleStatus & status)
     array.data.clear();
     array.data.push_back(status.mode);
     array.data.push_back(status.state);
-    array.data.push_back(status.batteryLevel);
+    array.data.push_back(int(status.batteryLevel*100));
     pub_status.publish(array);
 
 }
