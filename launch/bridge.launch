@@ -1,0 +1,29 @@
+<launch>
+  <arg name="agent" default="$(env ROBOT_NAME)"/>
+  <arg name="ip"    default="172.16.51.70" />
+  <arg name="port"  default="14251" />
+  <arg name="goto_enabled" default="true" />
+
+  <!-- Define UTM origin as function of site argument -->
+  <arg name="site" default="caylus"/>
+  <include file="$(find effibot_driver)/launch/utm_$(arg site).launch" />
+ 
+  <group ns="$(arg agent)">
+    <param name="state/gps" type="bool" value="true" />
+    <param name="state/bumper" type="bool" value="true" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_laser"
+	  args="0 0 0.200 0 0.35 0 $(arg agent)_base $(arg agent)_laser 10" />
+
+    <node pkg="tf" type="static_transform_publisher" name="base_to_imu"
+	  args="-0.18 -0.02 0.01 -1.57 0 0 $(arg agent)_base $(arg agent)_imu 10" />
+
+    <node name="payload_monitor" pkg="effibot_driver" type="payload_monitor" />
+    <node name="watchdog_node" pkg="effibot_driver" type="watchdog_node" />
+    <node name="ros_bridge" pkg="effibot_driver" type="bridge_node" 
+	  args="$(arg agent) $(arg ip) $(arg port) $(arg goto_enabled)" output="screen">
+      <!--remap from="effibox/utm_pose" to="pose" /-->
+    </node>
+    
+  </group>
+</launch>

@@ -142,7 +142,7 @@ void EffibotBridge::onVehicleStatusReceived(const VehicleStatus & status)
 
     robot_state_ = status.state;
 
-    std_msgs::Float32MultiArray array;
+    std_msgs::Int32MultiArray array;
     array.data.clear();
     array.data.push_back(status.mode);
     array.data.push_back(status.state);
