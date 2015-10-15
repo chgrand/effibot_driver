@@ -127,6 +127,19 @@ target_link_libraries(driver_node
 )
 
 
+add_executable(bridge_node
+  src/bridge_node.cpp
+  src/effibot_bridge.cpp
+  src/gps_nmea_driver.cpp
+)
+
+target_link_libraries(bridge_node
+ ${catkin_LIBRARIES}
+  Qt5::Core
+  dga-external-component-protocol
+)
+
+
 # add_executable(light_node
 #   src/driver_node_light.cpp
 #   src/driver_light.cpp

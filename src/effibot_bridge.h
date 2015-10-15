@@ -35,10 +35,11 @@
 
 using namespace dga::network;
 
-class Effibot : public VehicleCommunicationListener
+class EffibotBridge : public VehicleCommunicationListener
 {
-    Effibot(std::string name, std::string ip, int port, bool goto_enabled);
-    ~Effibot();
+public:
+    EffibotBridge(std::string name, std::string ip, int port, bool goto_enabled);
+    ~EffibotBridge();
 
 private:
     // ROS callback

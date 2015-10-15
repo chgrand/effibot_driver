@@ -12,7 +12,7 @@
 using namespace std;
 
 //-----------------------------------------------------------------------------
-Effibot::Effibot(string name, string ip, int port, bool goto_enabled) :
+EffibotBridge::EffibotBridge(string name, string ip, int port, bool goto_enabled) :
     communication_(this),
     connected_(false),
     robot_name(name),
@@ -40,7 +40,7 @@ Effibot::Effibot(string name, string ip, int port, bool goto_enabled) :
     nh_.setParam("state/gps", gps_active_);
 
     // Service config
-    srv_SetConfig = nh_.advertiseService("set_config", &Effibot::setConfig, this);
+    srv_SetConfig = nh_.advertiseService("set_config", &EffibotBridge::setConfig, this);
 
     // Publisher (sensors data)
     pub_status = nh_.advertise<std_msgs::Int32MultiArray>("status",1);
@@ -56,19 +56,19 @@ Effibot::Effibot(string name, string ip, int port, bool goto_enabled) :
     pub_laser = nh_.advertise<sensor_msgs::LaserScan>("sensors/laser/scan",1);
 
     // Subscribers
-    sub_action_cancel = nh_.subscribe("action/cancel_cmd", 1, &Effibot::actionCancelCmd, this);
-    sub_action_cmdvel = nh_.subscribe("action/cmd_vel", 1, &Effibot::actionCmdVel, this);
-    sub_action_goto = nh_.subscribe("action/waypoints", 1, &Effibot::actionWaypoints, this);
+    sub_action_cancel = nh_.subscribe("action/cancel_cmd", 1, &EffibotBridge::actionCancelCmd, this);
+    sub_action_cmdvel = nh_.subscribe("action/cmd_vel", 1, &EffibotBridge::actionCmdVel, this);
+    sub_action_goto = nh_.subscribe("action/waypoints", 1, &EffibotBridge::actionWaypoint, this);
 
     // Connection loop callback at 1Hz <--> 1s
-    connect_loop_timer = nh_.createTimer(ros::Duration(1), &Effibot::connect_loop, this);
+    connect_loop_timer = nh_.createTimer(ros::Duration(1), &EffibotBridge::connect_loop, this);
 
     // main loop callback at 100Hz <--> 10ms
-    //main_loop_timer = nh_.createTimer(ros::Duration(0.010), &Effibot::main_loop, this);
+    //main_loop_timer = nh_.createTimer(ros::Duration(0.010), &EffibotBridge::main_loop, this);
 }
 
 //-----------------------------------------------------------------------------
-Effibot::~Effibot()
+EffibotBridge::~EffibotBridge()
 {
     if(connected_)
         communication_.disconnectFromVehicle();
@@ -82,7 +82,7 @@ Effibot::~Effibot()
 //============================================================================
 
 //-----------------------------------------------------------------------------
-void Effibot::connect_loop(const ros::TimerEvent& e)
+void EffibotBridge::connect_loop(const ros::TimerEvent& e)
 {
     if(!connected_) {
         ROS_INFO("Try to connect on robot core at %s:%i", ip_.c_str(), port_);
@@ -91,7 +91,7 @@ void Effibot::connect_loop(const ros::TimerEvent& e)
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleConnected()
+void EffibotBridge::onVehicleConnected()
 {
     connected_ = true;
     ROS_INFO("Vehicle connected");
@@ -100,7 +100,7 @@ void Effibot::onVehicleConnected()
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleDisconnected()
+void EffibotBridge::onVehicleDisconnected()
 {
     connected_ = false;
     ROS_INFO("Vehicle disconnected");
@@ -113,26 +113,26 @@ void Effibot::onVehicleDisconnected()
 //
 //============================================================================
 
-void Effibot::onVehicleStateChanged(VehicleState state)
+void EffibotBridge::onVehicleStateChanged(VehicleState state)
 {
     //robot_state_ = state;
 }
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleModeChanged(VehicleMode mode)
+void EffibotBridge::onVehicleModeChanged(VehicleMode mode)
 {
     //robot_mode_ = mode;
 }
 
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleSendError(const SendError & error)
+void EffibotBridge::onVehicleSendError(const SendError & error)
 {
     ROS_INFO("Send error !!!");
 }
 
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleStatusReceived(const VehicleStatus & status)
+void EffibotBridge::onVehicleStatusReceived(const VehicleStatus & status)
 {
     /*
     robot_mode_ = status.mode;
@@ -154,12 +154,12 @@ void Effibot::onVehicleStatusReceived(const VehicleStatus & status)
 
 //============================================================================
 //
-//     Effibot action comminucation <-- ROS topic "action/${name}"
+//     EffibotBridge action comminucation <-- ROS topic "action/${name}"
 //
 //============================================================================
 
 
-void Effibot::actionCancelCmd(const std_msgs::Empty& msg)
+void EffibotBridge::actionCancelCmd(const std_msgs::Empty& msg)
 {
     if(!connected_)
         return;
@@ -170,7 +170,7 @@ void Effibot::actionCancelCmd(const std_msgs::Empty& msg)
 
 
 //-----------------------------------------------------------------------------
-void Effibot::actionCmdVel(const geometry_msgs::Twist::ConstPtr& msg)
+void EffibotBridge::actionCmdVel(const geometry_msgs::Twist::ConstPtr& msg)
 {
     if(!connected_)
         return;
@@ -203,7 +203,7 @@ void Effibot::actionCmdVel(const geometry_msgs::Twist::ConstPtr& msg)
 };
 
 //-----------------------------------------------------------------------------
-void Effibot::actionWaypoint(const geometry_msgs::Pose::ConstPtr & msg)
+void EffibotBridge::actionWaypoint(const geometry_msgs::Pose::ConstPtr & msg)
 {
     if(!connected_)
         return;
@@ -274,27 +274,31 @@ void Effibot::actionWaypoint(const geometry_msgs::Pose::ConstPtr & msg)
 //============================================================================
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleWaypointsReceived(int waypointListId)
+void EffibotBridge::onVehicleWaypointsReceived(int waypointListId)
 {
+    char buffer[128];
+    sprintf(buffer, "Waypoint started id=%i", waypointListId);
     std_msgs::String msg;
-    msg.data = "Waypoint started";
-    pub_action_report.publish(msg);
+    msg.data = string(buffer);
+    pub_action_status.publish(msg);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleWaypointReached(int waypointIndex)
+void EffibotBridge::onVehicleWaypointReached(int waypointIndex)
 {
+    char buffer[128];
+    sprintf(buffer, "Waypoint reached --> %i", waypointIndex);
     std_msgs::String msg;
-    sprintf(msg.data, "Waypoint reached --> %i", waypointIndex);
-    pub_action_report.publish(msg);
+    msg.data = string(buffer);
+    pub_action_status.publish(msg);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleCommandCancelled()
+void EffibotBridge::onVehicleCommandCancelled()
 {
     std_msgs::String msg;
-    sprintf(msg.data, "Command cancelled", waypointIndex);
-    pub_action_report.publish(msg);
+    msg.data = "Command cancelled";
+    pub_action_status.publish(msg);
 }
 
 
@@ -304,7 +308,7 @@ void Effibot::onVehicleCommandCancelled()
 //
 //=============================================================================
 
-bool Effibot::setConfig(effibot_msgs::SetConfig::Request &req,
+bool EffibotBridge::setConfig(effibot_msgs::SetConfig::Request &req,
                         effibot_msgs::SetConfig::Response &res)
 {
   gps_active_=req.gps_state;
@@ -327,7 +331,7 @@ bool Effibot::setConfig(effibot_msgs::SetConfig::Request &req,
 //=============================================================================
 
 
-void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
+void EffibotBridge::onVehicleOdometryReceived(const VehicleOdometry & odometry)
 {
     // Publish vehicle velocity state based on encoder measurment as odometry message
     // The pose is not estimated here and only the twist is provided
@@ -341,8 +345,8 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
     double v_x  = (vel_right+vel_left)/2;
     double v_th = (vel_right-vel_left)/(2*basewidth_);
 
-    twist_Vx = v_x;
-    twist_Wz = v_th;
+    //twist_Vx = v_x;
+    //twist_Wz = v_th;
 
     // publish the odometry message over ROS
     // -------------------------------------
@@ -365,11 +369,11 @@ void Effibot::onVehicleOdometryReceived(const VehicleOdometry & odometry)
     odom_msg.twist.twist.angular.z = v_th;
     //odom_msg.twist.covariance = [];
 
-    odometry_pub.publish(odom_msg);
+    pub_odometry.publish(odom_msg);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleMotorCurrentsReceived(const VehicleMotorCurrents & currents)
+void EffibotBridge::onVehicleMotorCurrentsReceived(const VehicleMotorCurrents & currents)
 {
     std_msgs::Float32MultiArray array;
     array.data.clear();
@@ -377,11 +381,11 @@ void Effibot::onVehicleMotorCurrentsReceived(const VehicleMotorCurrents & curren
     array.data.push_back(float(currents.frontRightMotorCurrent));
     array.data.push_back(float(currents.rearLeftMotorCurrent));
     array.data.push_back(float(currents.rearRightMotorCurrent));
-    motor_current_pub.publish(array);
+    pub_motor_current.publish(array);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleLidarDataReceived(const LidarData & data)
+void EffibotBridge::onVehicleLidarDataReceived(const LidarData & data)
 {
     sensor_msgs::LaserScan laser_msg;
 
@@ -414,13 +418,13 @@ void Effibot::onVehicleLidarDataReceived(const LidarData & data)
         laser_msg.intensities.push_back(0.0);
     }
 
-    laser_pub.publish(laser_msg);
+    pub_laser.publish(laser_msg);
 }
 
 
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localization)
+void EffibotBridge::onVehicleLocalizationReceived(const VehicleLocalization & localization)
 {
     double lon_ = localization.position.longitude;
     double lat_ = localization.position.latitude;
@@ -436,11 +440,11 @@ void Effibot::onVehicleLocalizationReceived(const VehicleLocalization & localiza
     pose_msg.header.frame_id = "odom";
     pose_msg.pose.position.x = pose[0];
     pose_msg.pose.position.y = pose[1];
-    pose_pub.publish(pose_msg);
+    pub_pose.publish(pose_msg);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleImuDataReceived(const ImuData & data)
+void EffibotBridge::onVehicleImuDataReceived(const ImuData & data)
 {
     // Intergrate sensor transformation
     sensor_msgs::Imu imu_msg;
@@ -464,11 +468,11 @@ void Effibot::onVehicleImuDataReceived(const ImuData & data)
 
     // [TODO] add offset on acceleration
 
-    imu_pub.publish(imu_msg);
+    pub_imu.publish(imu_msg);
 }
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleGpsDataReceived(const GpsData & data)
+void EffibotBridge::onVehicleGpsDataReceived(const GpsData & data)
 {
     ros::Time date=ros::Time::now();
 
@@ -481,11 +485,11 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
     array.data.push_back(gps_driver.getFixType());
     array.data.push_back(gps_driver.getNumSatTracked());
     array.data.push_back(gps_driver.getNumSatViewed());
-    gps_info_pub.publish(array);
+    pub_gps_info.publish(array);
 
     std_msgs::Float32 msg;
     msg.data = gps_driver.getHDOP();
-    gps_hdop_pub.publish(msg);
+    pub_gps_hdop.publish(msg);
 
 
     if((ret == GpsNmeaDriver::GPGGA)||(ret==GpsNmeaDriver::GPRMC))
@@ -511,7 +515,7 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
         float variance = gps_driver.getHDOP()*nominal_variance/2.;
         pose_msg.pose.covariance[0] = variance;
         pose_msg.pose.covariance[7] = variance;
-        gps_pub.publish(pose_msg);
+        pub_gps_pose.publish(pose_msg);
 
         // GPS LLA message
         sensor_msgs::NavSatFix lla_msg;
@@ -530,13 +534,13 @@ void Effibot::onVehicleGpsDataReceived(const GpsData & data)
         lla_msg.position_covariance[0] = variance;
         lla_msg.position_covariance[4] = variance;
         lla_msg.position_covariance[8] = 999;
-        gps_lla_pub.publish(lla_msg);
+        pub_gps_lla.publish(lla_msg);
 
     }
 }
 
 
 //-----------------------------------------------------------------------------
-void Effibot::onVehicleObstacleMapReceived(const ObstacleMap & data)
+void EffibotBridge::onVehicleObstacleMapReceived(const ObstacleMap & data)
 {
 }
