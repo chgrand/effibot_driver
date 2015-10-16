@@ -45,7 +45,7 @@ EffibotBridge::EffibotBridge(string name, string ip, int port, bool goto_enabled
     // Publisher (sensors data)
     pub_status = nh_.advertise<std_msgs::Int32MultiArray>("status",1);
     pub_pose = nh_.advertise<geometry_msgs::PoseStamped>("pose",1);
-    pub_action_status = nh_.advertise<std_msgs::Int32>("action/report", 1);
+    pub_action_status = nh_.advertise<std_msgs::String>("action/report", 1);
     pub_gps_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("gps/utm_pose",1);
     pub_gps_lla = nh_.advertise<sensor_msgs::NavSatFix>("gps/lla_pose",1);
     pub_gps_info = nh_.advertise<std_msgs::Int32MultiArray>("gps/info", 1);
@@ -58,7 +58,7 @@ EffibotBridge::EffibotBridge(string name, string ip, int port, bool goto_enabled
     // Subscribers
     sub_action_cancel = nh_.subscribe("action/cancel_cmd", 1, &EffibotBridge::actionCancelCmd, this);
     sub_action_cmdvel = nh_.subscribe("action/cmd_vel", 1, &EffibotBridge::actionCmdVel, this);
-    sub_action_goto = nh_.subscribe("action/waypoints", 1, &EffibotBridge::actionWaypoint, this);
+    sub_action_goto = nh_.subscribe("action/goto", 1, &EffibotBridge::actionWaypoint, this);
 
     // Connection loop callback at 1Hz <--> 1s
     connect_loop_timer = nh_.createTimer(ros::Duration(1), &EffibotBridge::connect_loop, this);
@@ -205,6 +205,7 @@ void EffibotBridge::actionCmdVel(const geometry_msgs::Twist::ConstPtr& msg)
 //-----------------------------------------------------------------------------
 void EffibotBridge::actionWaypoint(const geometry_msgs::Pose::ConstPtr & msg)
 {
+  ROS_INFO("Enter actionWaypoint");
     if(!connected_)
         return;
 
@@ -287,7 +288,10 @@ void EffibotBridge::onVehicleWaypointsReceived(int waypointListId)
 void EffibotBridge::onVehicleWaypointReached(int waypointIndex)
 {
     char buffer[128];
-    sprintf(buffer, "Waypoint reached --> %i", waypointIndex);
+    if(waypointIndex<(waypointNum-1))
+      sprintf(buffer, "Waypoint reached --> %i", waypointIndex);
+    else
+      sprintf(buffer, "Waypoint last reached");
     std_msgs::String msg;
     msg.data = string(buffer);
     pub_action_status.publish(msg);
